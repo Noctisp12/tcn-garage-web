@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCN Garage - Premium Shop</title>
+    
+    <!-- SweetAlert2 สำหรับป๊อปอัปแจ้งเตือน -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --bg-body: #0a0a0a;
+            --bg-panel: #141414;
+            --bg-input: #1f1f1f;
+            --gold-main: #D4AF37;
+            --gold-glow: rgba(212, 175, 55, 0.3);
+            --gold-hover: #F3E5AB;
+            --text-light: #f5f5f5;
+            --text-muted: #888888;
+            --border-color: #2a2a2a;
+            --danger: #b30000;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-light); padding: 30px; display: flex; justify-content: center; }
+        .layout-wrapper { display: flex; gap: 30px; max-width: 1300px; width: 100%; align-items: flex-start; }
+        .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); position: sticky; top: 30px; min-width: 300px; }
+        
+        .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+        .tabs { display: flex; gap: 10px; }
+        .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
+        .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
+        
+        .search-box { flex: 1; max-width: 300px; }
+        .search-box input { width: 100%; padding: 12px 15px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; transition: 0.3s; }
+        .search-box input:focus { border-color: var(--gold-main); }
+        
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
+        .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
+        .item-image { height: 140px; background-color: #000; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
+        .stock { color: var(--text-muted); font-size: 13px; }
+        
+        .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-add { background-color: transparent; color: var(--gold-main); border: 1px solid var(--gold-main); }
+        .btn-add:hover { background-color: var(--gold-main); color: #000; }
+        .btn-out { background-color: var(--danger); color: #fff; opacity: 0.5; cursor: not-allowed; }
+        
+        .brand { text-align: center; margin-bottom: 25px; }
+        .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); }
+        .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
+        .sidebar label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-light); }
+        .sidebar select, .sidebar textarea { width: 100%; padding: 12px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 20px; transition: 0.3s; }
+        .sidebar select:focus, .sidebar textarea:focus { border-color: var(--gold-main); }
+        .total-box { background-color: #000; padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 20px; }
+        .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
+        .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
+        .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-submit:hover { background-color: var(--gold-hover); box-shadow: 0 0 15px var(--gold-glow); transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+<div class="layout-wrapper">
+    <div class="main-content">
+        <div class="header-controls">
+            <div class="tabs" id="tab-container">
+                <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
+                <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
+                <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
+            </div>
+            <div class="search-box">
+                <input type="text" placeholder="ค้นหาชิ้นส่วน..." onkeyup="searchItems(this.value)">
+            </div>
+        </div>
+        
+        <!-- พื้นที่สร้างการ์ดไอเทม -->
+        <div class="item-grid" id="item-grid-container"></div>
+    </div>
+
+    <!-- แผงตะกร้าด้านขวา -->
+    <div class="sidebar">
+        <div class="brand">
+            <h1>TCN Garage</h1>
+            <p>ระบบเบิกจ่ายอุปกรณ์</p>
+        </div>
+
+        <label for="userSelect">เลือกพนักงานผู้เบิก:</label>
+        <select id="userSelect">
+            <option value="" disabled selected>-- กรุณาเลือก --</option>
+            <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
+            <option value="Lucas_Harper">2. Lucas Harper</option>
+        </select>
+
+        <label for="noteInput">หมายเหตุ (ถ้ามี):</label>
+        <textarea id="noteInput" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
+
+        <div class="total-box">
+            <span class="label">ยอดรวมการเบิก ($)</span>
+            <span class="amount">$<span id="totalPrice">0</span></span>
+        </div>
+
+        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">ยืนยันการเบิก</button>
+    </div>
+</div>
+
+<script>
+    // URL ที่อัปเดตใหม่เรียบร้อยแล้ว
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
+
+    let total = 0;
+    let currentCategory = 'Customs';
+    let currentSearchQuery = '';
+    
+    // ระบบตะกร้าเก็บรายการชิ้นส่วน
+    let cart = {}; 
+
+    // ฐานข้อมูลไอเทม
+    const itemsData = [
+        { name: "Performance Parts", price: 10000, stock: 1, category: "Customs", image: "performance.png" },
+        { name: "Cosmetic Parts", price: 1000, stock: 1, category: "Customs", image: "cosmetic.png" },
+        { name: "Respray Kit", price: 2000, stock: 1, category: "Customs", image: "respray.png" },
+        { name: "Vehicle Wheels Set", price: 2000, stock: 1, category: "Customs", image: "wheels.png" },
+        { name: "Extras_Kit", price: 1000, stock: 1, category: "Customs", image: "extras.png" },
+        { name: "Stancer Kit", price: 1000, stock: 1, category: "Customs", image: "stancer.png" },
+        { name: "Carplay", price: 2000, stock: 1, category: "Customs", image: "carplay.png" },
+
+        { name: "Repair Kit", price: 300, stock: 51, category: "Core Parts", image: "repair_kit.png" },
+        { name: "Alternator", price: 600, stock: 64, category: "Core Parts", image: "alternator.png" },
+        { name: "Brakes", price: 600, stock: 61, category: "Core Parts", image: "brakes.png" },
+        { name: "Fuel Injector", price: 600, stock: 55, category: "Core Parts", image: "fuel_injector.png" },
+        { name: "Power Steering Pump", price: 600, stock: 65, category: "Core Parts", image: "steering_pump.png" },
+        { name: "Radiator", price: 600, stock: 27, category: "Core Parts", image: "radiator.png" },
+        { name: "Transmission", price: 600, stock: 22, category: "Core Parts", image: "transmission.png" },
+        { name: "EV Battery", price: 600, stock: 60, category: "Core Parts", image: "ev_battery.png" },
+        { name: "Electric Motor", price: 600, stock: 82, category: "Core Parts", image: "electric_motor.png" },
+
+        { name: "Air Filter", price: 400, stock: 658, category: "Service", image: "air_filter.png" },
+        { name: "Brake Fluid", price: 400, stock: 24, category: "Service", image: "brake_fluid.png" },
+        { name: "Brake Pads", price: 400, stock: 33, category: "Service", image: "brake_pads.png" },
+        { name: "Coolant", price: 400, stock: 0, category: "Service", image: "coolant.png" },
+        { name: "Drive Belt", price: 400, stock: 21, category: "Service", image: "drive_belt.png" },
+        { name: "Fuel Filter", price: 400, stock: 0, category: "Service", image: "fuel_filter.png" },
+        { name: "Oil Filter", price: 400, stock: 648, category: "Service", image: "oil_filter.png" },
+        { name: "Steering Fluid", price: 400, stock: 16, category: "Service", image: "steering_fluid.png" },
+        { name: "Spark Plugs", price: 400, stock: 26, category: "Service", image: "spark_plugs.png" },
+        { name: "Tires", price: 400, stock: 35, category: "Service", image: "tires.png" },
+        { name: "Transmission Fluid", price: 400, stock: 14, category: "Service", image: "transmission_fluid.png" },
+        { name: "Battery Coolant", price: 400, stock: 64, category: "Service", image: "battery_coolant.png" },
+        { name: "High Voltage Wiring", price: 400, stock: 59, category: "Service", image: "wiring.png" }
+    ];
+
+    function renderItems(category, searchQuery = '') {
+        const container = document.getElementById('item-grid-container');
+        container.innerHTML = ''; 
+        currentSearchQuery = searchQuery; 
+
+        const filteredItems = itemsData.filter(item => 
+            item.category === category && 
+            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        filteredItems.forEach(item => {
+            let buttonHTML = '';
+            if (item.stock > 0) {
+                let countInCart = cart[item.name] ? ` (${cart[item.name]})` : '';
+                buttonHTML = `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${countInCart}</button>`;
+            } else {
+                buttonHTML = `<button class="btn-out">สินค้าหมด</button>`;
+            }
+
+            const fallbackText = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
+            const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallbackText}'">`;
+
+            const itemCard = `
+                <div class="item-card">
+                    <div class="item-image">${imgHTML}</div>
+                    <div class="item-info">
+                        <h4>${item.name}</h4>
+                        <div class="price-stock">
+                            <span class="price">$${item.price.toLocaleString()}</span>
+                            <span class="stock">เหลือ ${item.stock}</span>
+                        </div>
+                        ${buttonHTML}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += itemCard;
+        });
+    }
+
+    function changeTab(categoryName, element) {
+        currentCategory = categoryName;
+        let tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        element.classList.add('active');
+        renderItems(currentCategory, currentSearchQuery);
+    }
+
+    function searchItems(value) {
+        renderItems(currentCategory, value);
+    }
+
+    function addItem(itemName) {
+        let item = itemsData.find(i => i.name === itemName);
+        if (item && item.stock > 0) {
+            item.stock -= 1;
+            total += item.price;
+            
+            if (cart[itemName]) {
+                cart[itemName] += 1;
+            } else {
+                cart[itemName] = 1;
+            }
+
+            document.getElementById('totalPrice').innerText = total.toLocaleString();
+            renderItems(currentCategory, currentSearchQuery);
+        }
+    }
+
+    async function submitOrder() {
+        const userSelect = document.getElementById('userSelect').value;
+        const note = document.getElementById('noteInput').value;
+
+        if (userSelect === "") {
+            Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', html: 'กรุณาเลือก <b>พนักงานผู้เบิก</b> ก่อนทำรายการครับ', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
+            return;
+        }
+
+        if (total === 0) {
+            Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์ที่ต้องการเบิกอย่างน้อย 1 ชิ้น', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
+            return;
+        }
+
+        // แปลงข้อมูลในตะกร้าเป็นรูปแบบ "Item Name x 2, Item Name x 1"
+        let orderStringArray = [];
+        for (let itemName in cart) {
+            orderStringArray.push(`${itemName} x ${cart[itemName]}`);
+        }
+        let orderDetailString = orderStringArray.join(', ');
+
+        const payload = {
+            name: userSelect,
+            order: orderDetailString,
+            note: note,
+            total: total
+        };
+
+        Swal.fire({
+            title: 'กำลังบันทึกข้อมูล...',
+            text: 'กรุณารอสักครู่ ระบบกำลังส่งข้อมูลไปยัง Google Sheet',
+            allowOutsideClick: false,
+            background: '#141414',
+            color: '#ffffff',
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'TCN Garage',
+                    text: 'บันทึกข้อมูลลง Google Sheet สำเร็จ!',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#D4AF37',
+                    background: '#141414',
+                    color: '#ffffff'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        window.location.reload(); 
+                    }
+                });
+            } else {
+                throw new Error("API Returned Error");
+            }
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถส่งข้อมูลได้ ลองตรวจสอบ URL สคริปต์อีกครั้งครับ',
+                confirmButtonColor: '#D4AF37',
+                background: '#141414',
+                color: '#ffffff'
+            });
+        }
+    }
+
+    window.onload = () => {
+        renderItems('Customs');
+    };
+</script>
+
+</body>
+</html>
