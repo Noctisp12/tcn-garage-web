@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCN Garage - Premium Shop</title>
+    <title>TCN Garage - Official System</title>
     
-    <!-- SweetAlert2 สำหรับป๊อปอัปแจ้งเตือน -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
@@ -81,11 +80,9 @@
             </div>
         </div>
         
-        <!-- พื้นที่สร้างการ์ดไอเทม -->
         <div class="item-grid" id="item-grid-container"></div>
     </div>
 
-    <!-- แผงตะกร้าด้านขวา -->
     <div class="sidebar">
         <div class="brand">
             <h1>TCN Garage</h1>
@@ -112,50 +109,47 @@
 </div>
 
 <script>
-    // URL ที่อัปเดตใหม่เรียบร้อยแล้ว
+    // URL สำหรับดึงและส่งข้อมูลไป Google Sheet
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
 
     let total = 0;
     let currentCategory = 'Customs';
     let currentSearchQuery = '';
-    
-    // ระบบตะกร้าเก็บรายการชิ้นส่วน
     let cart = {}; 
+    let itemsData = []; // รอรับข้อมูลจาก Google Sheet
 
-    // ฐานข้อมูลไอเทม
-    const itemsData = [
-        { name: "Performance Parts", price: 10000, stock: 1, category: "Customs", image: "performance.png" },
-        { name: "Cosmetic Parts", price: 1000, stock: 1, category: "Customs", image: "cosmetic.png" },
-        { name: "Respray Kit", price: 2000, stock: 1, category: "Customs", image: "respray.png" },
-        { name: "Vehicle Wheels Set", price: 2000, stock: 1, category: "Customs", image: "wheels.png" },
-        { name: "Extras_Kit", price: 1000, stock: 1, category: "Customs", image: "extras.png" },
-        { name: "Stancer Kit", price: 1000, stock: 1, category: "Customs", image: "stancer.png" },
-        { name: "Carplay", price: 2000, stock: 1, category: "Customs", image: "carplay.png" },
+    // ฟังก์ชันดึงสต็อกล่าสุดจาก Google Sheet เมื่อเปิดเว็บ
+    async function fetchStock() {
+        Swal.fire({
+            title: 'กำลังเชื่อมต่อฐานข้อมูล...',
+            text: 'รอโหลดคลังอุปกรณ์สักครู่',
+            allowOutsideClick: false,
+            background: '#141414',
+            color: '#ffffff',
+            didOpen: () => { Swal.showLoading(); }
+        });
 
-        { name: "Repair Kit", price: 300, stock: 51, category: "Core Parts", image: "repair_kit.png" },
-        { name: "Alternator", price: 600, stock: 64, category: "Core Parts", image: "alternator.png" },
-        { name: "Brakes", price: 600, stock: 61, category: "Core Parts", image: "brakes.png" },
-        { name: "Fuel Injector", price: 600, stock: 55, category: "Core Parts", image: "fuel_injector.png" },
-        { name: "Power Steering Pump", price: 600, stock: 65, category: "Core Parts", image: "steering_pump.png" },
-        { name: "Radiator", price: 600, stock: 27, category: "Core Parts", image: "radiator.png" },
-        { name: "Transmission", price: 600, stock: 22, category: "Core Parts", image: "transmission.png" },
-        { name: "EV Battery", price: 600, stock: 60, category: "Core Parts", image: "ev_battery.png" },
-        { name: "Electric Motor", price: 600, stock: 82, category: "Core Parts", image: "electric_motor.png" },
-
-        { name: "Air Filter", price: 400, stock: 658, category: "Service", image: "air_filter.png" },
-        { name: "Brake Fluid", price: 400, stock: 24, category: "Service", image: "brake_fluid.png" },
-        { name: "Brake Pads", price: 400, stock: 33, category: "Service", image: "brake_pads.png" },
-        { name: "Coolant", price: 400, stock: 0, category: "Service", image: "coolant.png" },
-        { name: "Drive Belt", price: 400, stock: 21, category: "Service", image: "drive_belt.png" },
-        { name: "Fuel Filter", price: 400, stock: 0, category: "Service", image: "fuel_filter.png" },
-        { name: "Oil Filter", price: 400, stock: 648, category: "Service", image: "oil_filter.png" },
-        { name: "Steering Fluid", price: 400, stock: 16, category: "Service", image: "steering_fluid.png" },
-        { name: "Spark Plugs", price: 400, stock: 26, category: "Service", image: "spark_plugs.png" },
-        { name: "Tires", price: 400, stock: 35, category: "Service", image: "tires.png" },
-        { name: "Transmission Fluid", price: 400, stock: 14, category: "Service", image: "transmission_fluid.png" },
-        { name: "Battery Coolant", price: 400, stock: 64, category: "Service", image: "battery_coolant.png" },
-        { name: "High Voltage Wiring", price: 400, stock: 59, category: "Service", image: "wiring.png" }
-    ];
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL);
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                itemsData = result.data;
+                renderItems('Customs');
+                Swal.close();
+            } else {
+                throw new Error("Failed to load");
+            }
+        } catch (error) {
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'เชื่อมต่อล้มเหลว', 
+                text: 'ไม่สามารถดึงข้อมูลคลังอุปกรณ์จาก Sheet ได้ กรุณาตรวจสอบลิงก์หรือการตั้งค่า', 
+                background: '#141414', 
+                color: '#ffffff' 
+            });
+        }
+    }
 
     function renderItems(category, searchQuery = '') {
         const container = document.getElementById('item-grid-container');
@@ -213,13 +207,8 @@
         if (item && item.stock > 0) {
             item.stock -= 1;
             total += item.price;
+            cart[itemName] = (cart[itemName] || 0) + 1;
             
-            if (cart[itemName]) {
-                cart[itemName] += 1;
-            } else {
-                cart[itemName] = 1;
-            }
-
             document.getElementById('totalPrice').innerText = total.toLocaleString();
             renderItems(currentCategory, currentSearchQuery);
         }
@@ -230,83 +219,75 @@
         const note = document.getElementById('noteInput').value;
 
         if (userSelect === "") {
-            Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', html: 'กรุณาเลือก <b>พนักงานผู้เบิก</b> ก่อนทำรายการครับ', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
+            Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', html: 'กรุณาเลือก <b>พนักงานผู้เบิก</b>', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
             return;
         }
 
         if (total === 0) {
-            Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์ที่ต้องการเบิกอย่างน้อย 1 ชิ้น', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
+            Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์อย่างน้อย 1 ชิ้น', confirmButtonColor: '#D4AF37', background: '#141414', color: '#ffffff' });
             return;
         }
 
-        // แปลงข้อมูลในตะกร้าเป็นรูปแบบ "Item Name x 2, Item Name x 1"
         let orderStringArray = [];
         for (let itemName in cart) {
             orderStringArray.push(`${itemName} x ${cart[itemName]}`);
         }
-        let orderDetailString = orderStringArray.join(', ');
-
+        
         const payload = {
             name: userSelect,
-            order: orderDetailString,
+            order: orderStringArray.join(', '),
             note: note,
-            total: total
+            total: total,
+            cart: cart // ส่งข้อมูลตะกร้าไปหักลบสต็อกใน Google Sheet
         };
 
         Swal.fire({
-            title: 'กำลังบันทึกข้อมูล...',
-            text: 'กรุณารอสักครู่ ระบบกำลังส่งข้อมูลไปยัง Google Sheet',
+            title: 'กำลังอัปเดตระบบคลัง...',
+            text: 'รอสักครู่ ระบบกำลังบันทึกและตัดสต็อก',
             allowOutsideClick: false,
             background: '#141414',
             color: '#ffffff',
-            didOpen: () => {
-                Swal.showLoading();
-            }
+            didOpen: () => { Swal.showLoading(); }
         });
 
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8',
-                },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             });
-
             const result = await response.json();
 
             if (result.status === "success") {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'TCN Garage',
-                    text: 'บันทึกข้อมูลลง Google Sheet สำเร็จ!',
-                    confirmButtonText: 'ตกลง',
-                    confirmButtonColor: '#D4AF37',
-                    background: '#141414',
+                    icon: 'success', 
+                    title: 'TCN Garage', 
+                    text: 'บันทึกประวัติและตัดสต็อกสำเร็จ!',
+                    confirmButtonText: 'ตกลง', 
+                    confirmButtonColor: '#D4AF37', 
+                    background: '#141414', 
                     color: '#ffffff'
                 }).then((res) => {
-                    if (res.isConfirmed) {
-                        window.location.reload(); 
-                    }
+                    if (res.isConfirmed) window.location.reload(); 
                 });
             } else {
-                throw new Error("API Returned Error");
+                throw new Error();
             }
-
         } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถส่งข้อมูลได้ ลองตรวจสอบ URL สคริปต์อีกครั้งครับ',
-                confirmButtonColor: '#D4AF37',
-                background: '#141414',
-                color: '#ffffff'
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'เกิดข้อผิดพลาด', 
+                text: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 
+                confirmButtonColor: '#D4AF37', 
+                background: '#141414', 
+                color: '#ffffff' 
             });
         }
     }
 
+    // เริ่มทำงานเมื่อหน้าเว็บโหลดเสร็จ
     window.onload = () => {
-        renderItems('Customs');
+        fetchStock();
     };
 </script>
 
