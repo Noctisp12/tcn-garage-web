@@ -10,65 +10,26 @@
 
     <style>
         :root {
-            --bg-body: #080808; 
-            --bg-panel: #141414;
-            --bg-input: #1f1f1f;
-            --gold-main: #D4AF37;
-            --gold-glow: rgba(212, 175, 55, 0.3);
-            --gold-hover: #F3E5AB;
-            --text-light: #f5f5f5;
-            --text-muted: #888888;
-            --border-color: #2a2a2a;
-            --danger: #b30000;
-            --warning: #ff9900;
+            --bg-body: #080808; --bg-panel: #141414; --bg-input: #1f1f1f;
+            --gold-main: #D4AF37; --gold-glow: rgba(212, 175, 55, 0.3); --gold-hover: #F3E5AB;
+            --text-light: #f5f5f5; --text-muted: #888888; --border-color: #2a2a2a;
+            --danger: #b30000; --warning: #ff9900; --tech-blue: #00e5ff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
         body { 
             background-color: var(--bg-body); 
-            background-image: 
-                linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
-            background-size: 40px 40px; 
-            color: var(--text-light); 
-            padding: 40px 20px 20px 20px; 
-            display: flex; 
-            justify-content: center; 
-            min-height: 100vh;
-            overflow-x: hidden;
+            background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px; color: var(--text-light); padding: 40px 20px 20px 20px; 
+            display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden;
         }
 
         body::before {
-            content: "";
-            position: fixed;
-            top: -20%; left: -10%; width: 120%; height: 120%;
+            content: ""; position: fixed; top: -20%; left: -10%; width: 120%; height: 120%;
             background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
-            z-index: -1;
-            pointer-events: none;
+            z-index: -1; pointer-events: none;
         }
-
-        /* 💻 BOOT SEQUENCE SCREEN */
-        #boot-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #050505;
-            z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
-            padding: 50px;
-            font-family: 'Courier New', Courier, monospace;
-            transition: opacity 1s ease-out, visibility 1s;
-        }
-        #boot-screen.hidden { opacity: 0; visibility: hidden; }
-        .boot-line {
-            color: var(--gold-main); font-size: 14px; margin-bottom: 8px; opacity: 0;
-            text-shadow: 0 0 5px var(--gold-glow);
-        }
-        .boot-cursor {
-            display: inline-block; width: 10px; height: 15px; background-color: var(--gold-main);
-            animation: blink 0.8s infinite; margin-left: 5px; vertical-align: middle;
-        }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* 📱 Tablet Status Bar */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
@@ -79,9 +40,7 @@
         .battery-icon::after { content: ''; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: #aaa; }
         .battery-level { height: 100%; width: 85%; background: var(--text-light); }
 
-        .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; opacity: 0; transition: opacity 1.5s ease-in; }
-        .layout-wrapper.ready { opacity: 1; }
-
+        .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
         .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
         
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
@@ -105,16 +64,17 @@
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
-        
         .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
-        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-add, .btn-out, .btn-rp { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
         .btn-add:hover { background: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
-        .btn-add:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
         .btn-out { background-color: var(--danger); color: #fff; opacity: 0.5; cursor: not-allowed; }
         
+        /* 🎭 ปุ่มโหมด RP */
+        .btn-rp { background: linear-gradient(145deg, #1f1f1f, #0a0a0a); color: var(--tech-blue); border: 1px solid #005f73; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-rp:hover { border-color: var(--tech-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); color: #fff; transform: translateY(-2px); }
+
         .brand { text-align: center; margin-bottom: 20px; flex-shrink: 0; cursor: pointer; }
         .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); transition: 0.3s;}
         .brand h1:hover { color: #fff; }
@@ -147,29 +107,45 @@
         .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
         .history-table td.total-col { color: var(--gold-main); font-weight: bold; }
 
-        /* 📊 Dashboard Modal */
-        .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
+        /* 📊 & 🎭 Modals */
+        .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
         .app-modal.active { visibility: visible; opacity: 1; }
         .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 800px; max-width: 90%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; }
+        .modal-content.rp-app { width: 550px; border-color: var(--tech-blue); }
         .close-app { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; background: none; border: none; transition: 0.2s; }
         .close-app:hover { color: var(--danger); }
 
+        /* 🎭 RP App UI */
+        .rp-text-box { background: rgba(0,0,0,0.5); border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 13px; color: #ccc; text-align: left; line-height: 1.6; }
+        .rp-text-box span.me { color: #d4af37; } /* สีทองสำหรับ /me */
+        .rp-text-box span.do { color: #00e5ff; } /* สีฟ้าสำหรับ /do */
+        .rp-item-title { color: #fff; font-weight: bold; font-size: 14px; margin-top: 10px; border-bottom: 1px dashed #444; padding-bottom: 5px; margin-bottom: 5px;}
+        .rp-item-title:first-child { margin-top: 0; }
+        
+        .rp-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-rp-copy { flex: 1; background: #222; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; }
+        .btn-rp-copy:hover { background: #333; border-color: #fff; }
+        .btn-rp-start { flex: 2; background: var(--tech-blue); color: #000; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
+        .btn-rp-start:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); background: #33ffff; }
+
+        /* ⏳ Fullscreen Progress Bar Overlay */
+        #rp-progress-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
+        #rp-progress-overlay.active { visibility: visible; opacity: 1; }
+        .rp-timer-text { color: var(--tech-blue); font-size: 24px; font-family: monospace; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; }
+        .rp-progress-container { width: 60%; height: 20px; background: #111; border: 2px solid #333; border-radius: 10px; overflow: hidden; position: relative; box-shadow: 0 0 20px #000; }
+        .rp-progress-fill { width: 0%; height: 100%; background: var(--tech-blue); box-shadow: 0 0 15px var(--tech-blue); transition: width 0.1s linear; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.95); } to { transform: scale(1); } }
+        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<!-- 💻 BOOT SEQUENCE SCREEN -->
-<div id="boot-screen">
-    <div id="boot-text-container"></div>
-    <div class="boot-cursor"></div>
-</div>
-
 <div class="status-bar">
     <div class="left">
         <span id="sb-date">--/--/----</span>
-        <span>TCN OS v2.6</span>
+        <span>TCN OS v3.0</span>
     </div>
     <div class="right">
         <span id="sb-time">--:--</span>
@@ -214,7 +190,6 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')">
             <h1>TCN Garage</h1>
@@ -227,6 +202,10 @@
             <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
             <option value="Lucas_Harper">2. Lucas Harper</option>
         </select>
+
+        <button class="btn-rp" onclick="openRPModal()">
+            🎭 เริ่ม Action RP (จำลองการซ่อม)
+        </button>
 
         <label>รายการที่เลือก:</label>
         <div class="sidebar-cart-list" id="sidebarCartList">
@@ -253,78 +232,67 @@
     </div>
 </div>
 
+<div class="app-modal" id="rpModal">
+    <div class="modal-content rp-app">
+        <button class="close-app" onclick="toggleApp('rpModal')">✕</button>
+        <h2 style="color: #fff; font-weight: normal; margin-bottom: 5px; text-align: center;">🎭 Roleplay Assistant</h2>
+        <p style="color: var(--text-muted); font-size: 13px; text-align: center;">สร้างประโยค RP และจำลองเวลาซ่อมจากของในตะกร้า</p>
+        
+        <div class="rp-text-box" id="rpTextOutput">
+            </div>
+
+        <div class="rp-actions">
+            <button class="btn-rp-copy" onclick="copyRPText()">📋 คัดลอกทั้งหมด</button>
+            <button class="btn-rp-start" onclick="startRPProgress()">⏳ เริ่มจับเวลาซ่อม</button>
+        </div>
+    </div>
+</div>
+
+<div id="rp-progress-overlay">
+    <div class="rp-timer-text" id="rpTimerText">กำลังดำเนินการ: 0%</div>
+    <div class="rp-progress-container">
+        <div class="rp-progress-fill" id="rpProgressBar"></div>
+    </div>
+    <p style="color: #666; font-size: 14px; margin-top: 15px;">(กำลังเปิดใช้งานระบบเสียงเครื่องมือช่าง...)</p>
+</div>
+
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
+    let rpInterval = null;
+
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
 
-    // 🚀 BOOT SEQUENCE LOGIC
-    const bootLines = [
-        "TCN_OS_v2.6 BOOT SEQUENCE INITIATED...",
-        "CONNECTING TO LOS SANTOS DATABASES... [OK]",
-        "MOUNTING SECURE DRIVES... [OK]",
-        "LOADING SCARLATTI PERFORMANCE PROTOCOLS... [OK]",
-        "VERIFYING MECHANIC CREDENTIALS... [AUTHORIZED]",
-        "SYNCING LIVE INVENTORY DATA...",
-        "SYSTEM READY."
-    ];
-
-    function runBootSequence() {
-        const container = document.getElementById('boot-text-container');
-        const bootScreen = document.getElementById('boot-screen');
-        const mainLayout = document.getElementById('main-layout');
-        let delay = 0;
-
-        // เพื่อไม่ให้รำคาญเวลา Refresh จะเช็ค Session Storage ไว้ว่าโหลดแล้วหรือยัง
-        // ถ้าอยากให้โหลดทุกครั้งที่เข้าเว็บ ให้ลบ 2 บรรทัดด้านล่างนี้ออกครับ
-        if (sessionStorage.getItem('tcn_booted')) {
-            bootScreen.style.display = 'none';
-            mainLayout.classList.add('ready');
-            fetchStock();
-            return;
-        }
-
-        bootLines.forEach((line, index) => {
-            setTimeout(() => {
-                const p = document.createElement('div');
-                p.className = 'boot-line';
-                p.innerText = line;
-                container.appendChild(p);
-                // ทำให้ค่อยๆ ชัดขึ้น
-                setTimeout(() => p.style.opacity = 1, 50);
-                
-                // เล่นเสียง Tick เบาๆ ตอนโหลดตัวหนังสือ
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                osc.type = 'square'; osc.frequency.setValueAtTime(800 + (Math.random()*200), audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-
-            }, delay);
-            delay += 400; // ห่างกันบรรทัดละ 0.4 วินาที
-        });
-
-        setTimeout(() => {
-            bootScreen.classList.add('hidden');
-            setTimeout(() => {
-                bootScreen.style.display = 'none';
-                mainLayout.classList.add('ready');
-                sessionStorage.setItem('tcn_booted', 'true');
-                fetchStock(); // โหลดข้อมูลจาก Sheet หลังจาก Boot เสร็จ
-            }, 1000);
-        }, delay + 600);
-    }
-
-
+    // 🔊 เสียง UI พื้นฐาน
     function playTabSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.05); }
     function playAddSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
     function playRemoveSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
     function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
     function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
+
+    // 🔊 2. เสียงเครื่องมือช่าง (บล็อกลม / สว่าน) สังเคราะห์จาก Web Audio API
+    function playMechanicToolSound() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth'; // เสียงกระด้างๆ คล้ายเครื่องมือกล
+        
+        // จำลองเสียงบล็อกลม (ฟืด-ฟืด)
+        osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+        
+        gain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.05); // ดังขึ้นเร็ว
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3); // เฟดออก
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
 
     setInterval(() => {
         const now = new Date();
@@ -333,23 +301,13 @@
     }, 1000);
 
     async function fetchStock() {
-        Swal.fire({ title: 'TCN OS', text: 'กำลังซิงค์ข้อมูลกับคลังหลัก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
-        try { 
-            const response = await fetch(GOOGLE_SCRIPT_URL); 
-            const result = await response.json(); 
-            if (result.status === "success") { 
-                itemsData = result.data; 
-                logsData = result.logs || []; 
-                renderItems('Customs'); 
-                Swal.close(); 
-            } else throw new Error(); 
-        } 
+        Swal.fire({ title: 'TCN OS', text: 'กำลังซิงค์ข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        try { const response = await fetch(GOOGLE_SCRIPT_URL); const result = await response.json(); if (result.status === "success") { itemsData = result.data; logsData = result.logs || []; renderItems('Customs'); Swal.close(); } else throw new Error(); } 
         catch (error) { Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', background: '#141414', color: '#fff' }); }
     }
 
     function renderItems(category, searchQuery = '') {
-        const container = document.getElementById('item-grid-container');
-        container.innerHTML = ''; currentSearchQuery = searchQuery; 
+        const container = document.getElementById('item-grid-container'); container.innerHTML = ''; currentSearchQuery = searchQuery; 
         const filteredItems = itemsData.filter(item => item.category === category && item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
         filteredItems.forEach(item => {
@@ -362,39 +320,24 @@
     }
 
     function renderHistory() {
-        const tbody = document.getElementById('history-table-body');
-        tbody.innerHTML = '';
+        const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         if (logsData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`; return; }
-        
         logsData.forEach(log => {
-            const dateObj = new Date(log.time);
-            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-            const mechName = (log.mechanic || '').replace('_', ' ');
-            tbody.innerHTML += `<tr><td>${dateStr}</td><td>${mechName}</td><td style="font-size: 12px; color: #ccc;">${log.order}</td><td style="font-size: 12px; color: #ccc;">${log.note || '-'}</td><td class="total-col">$${Number(log.total).toLocaleString()}</td></tr>`;
+            const dateObj = new Date(log.time); const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            tbody.innerHTML += `<tr><td>${dateStr}</td><td>${(log.mechanic || '').replace('_', ' ')}</td><td style="font-size: 12px; color: #ccc;">${log.order}</td><td style="font-size: 12px; color: #ccc;">${log.note || '-'}</td><td class="total-col">$${Number(log.total).toLocaleString()}</td></tr>`;
         });
     }
 
     function changeTab(cat, el) { 
-        currentCategory = cat; 
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); 
-        el.classList.add('active'); 
-        playTabSound(); 
-
+        currentCategory = cat; document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); el.classList.add('active'); playTabSound(); 
         if (cat === 'History') {
-            document.getElementById('item-grid-container').style.display = 'none';
-            document.getElementById('searchBox').style.visibility = 'hidden';
-            document.getElementById('history-container').style.display = 'block';
-            renderHistory();
+            document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden'; document.getElementById('history-container').style.display = 'block'; renderHistory();
         } else {
-            document.getElementById('item-grid-container').style.display = 'grid';
-            document.getElementById('searchBox').style.visibility = 'visible';
-            document.getElementById('history-container').style.display = 'none';
-            renderItems(currentCategory, currentSearchQuery); 
+            document.getElementById('item-grid-container').style.display = 'grid'; document.getElementById('searchBox').style.visibility = 'visible'; document.getElementById('history-container').style.display = 'none'; renderItems(currentCategory, currentSearchQuery); 
         }
     }
     
     function searchItems(val) { renderItems(currentCategory, val); }
-
     function addItem(name) { let item = itemsData.find(i => i.name === name); if (item && item.stock > 0) { item.stock -= 1; total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI(); } else playErrorSound(); }
     
     function updateCartQty(name, change) {
@@ -411,11 +354,129 @@
         keys.forEach(name => { let item = itemsData.find(i => i.name === name); list.innerHTML += `<div class="sidebar-cart-item"><div class="sidebar-cart-item-info"><h5>${name}</h5><span>$${(item.price * cart[name]).toLocaleString()}</span></div><div class="sidebar-qty-control"><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', -1)">-</button><span class="qty-num">${cart[name]}</span><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', 1)">+</button></div></div>`; });
     }
 
-    function updateUI() { 
-        document.getElementById('totalPrice').innerText = total.toLocaleString(); 
-        if (currentCategory !== 'History') { renderItems(currentCategory, currentSearchQuery); }
-        renderSidebarCart(); 
+    function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory !== 'History') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
+
+    function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
+
+    /* 🎭 ROLEPLAY ASSISTANT LOGIC */
+    // ฐานข้อมูลคำสั่ง RP อิงตามของชิ้นนั้นๆ
+    const rpDatabase = {
+        'Repair Kit': { me: 'นำเครื่องมือช่างออกมาเปิดฝากระโปรงรถ ตรวจเช็คความเสียหาย และประแจขันซ่อมแซมชิ้นส่วนเครื่องยนต์', do: 'เครื่องยนต์ถูกซ่อมแซมกลับมาอยู่ในสภาพสมบูรณ์' },
+        'Respray Kit': { me: 'นำกระดาษทรายมาขัดเตรียมผิวรถ ก่อนใช้ปืนพ่นสีพ่นเคลือบอย่างประณีต', do: 'สีรถใหม่ถูกพ่นเสร็จเรียบร้อย สีเรียบเนียนและเงางาม' },
+        'Vehicle Wheels Set': { me: 'ใช้บล็อกลมขันน็อตล้อเดิมออก ยกออก และสวมล้อแม็กซ์ชุดใหม่เข้าไปแทนที่', do: 'ล้อทั้ง 4 ถูกติดตั้งและขันน็อตยึดอย่างแน่นหนา' },
+        'Oil Filter': { me: 'มุดลงใต้ท้องรถ ถ่ายน้ำมันเครื่องเก่าออก และทำการเปลี่ยนไส้กรองน้ำมันเครื่องชุดใหม่', do: 'เปลี่ยนน้ำมันเครื่องเสร็จสิ้น ฝาปิดสนิทไม่มีรอยรั่วซึม' },
+        'Air Filter': { me: 'ปลดล็อกฝาครอบกรองอากาศ ถอดแผ่นกรองเก่าที่ดำออก และใส่แผ่นกรองอากาศของใหม่เข้าไป', do: 'กรองอากาศติดตั้งเรียบร้อย อากาศไหลผ่านเข้าเครื่องยนต์ได้สะดวกขึ้น' },
+        'Spark Plugs': { me: 'ใช้บล็อกถอดหัวเทียนเก่าที่เสื่อมสภาพออก และขันหัวเทียนชุดใหม่เข้าไปทีละสูบตามค่าทอร์คที่กำหนด', do: 'เปลี่ยนหัวเทียนครบทุกสูบ ระบบจุดระเบิดกลับมาทำงานเต็มประสิทธิภาพ' }
+    };
+
+    let generatedRPString = ""; // เอาไว้เก็บข้อความเพื่อก๊อปปี้
+    let totalRPTime = 0; // เวลารวมในการซ่อม (วินาที)
+
+    function openRPModal() {
+        const keys = Object.keys(cart);
+        if (keys.length === 0) {
+            playErrorSound();
+            return Swal.fire({ icon: 'warning', title: 'ไม่มีรายการ', text: 'กรุณาเพิ่มอุปกรณ์ลงในตะกร้าก่อนเปิดโหมด RP', background: '#141414', color: '#fff' });
+        }
+        
+        playTabSound();
+        const outputBox = document.getElementById('rpTextOutput');
+        outputBox.innerHTML = '';
+        generatedRPString = "";
+        totalRPTime = 0;
+
+        keys.forEach(name => {
+            const qty = cart[name];
+            // หา RP Text จากฐานข้อมูล ถ้าไม่มีให้ใช้ประโยคพื้นฐาน
+            const rp = rpDatabase[name] || {
+                me: `หยิบ ${name} ออกมาเตรียมพร้อม และทำการติดตั้งเข้ากับตัวรถอย่างระมัดระวัง`,
+                do: `ติดตั้ง ${name} เข้ากับตัวรถเสร็จสมบูรณ์และพร้อมใช้งาน`
+            };
+            
+            // เพิ่มเวลาซ่อม 10 วินาทีต่อ 1 ชิ้น (สูงสุดไม่เกิน 60 วิ เพื่อไม่ให้รอนานไป)
+            totalRPTime += (10 * qty); 
+
+            // สร้าง HTML โชว์ในกล่อง
+            const htmlBlock = `
+                <div class="rp-item-title">[ดำเนินการ: ${name} x${qty}]</div>
+                <span class="me">/me ${rp.me}</span><br>
+                <span class="do">/do ${rp.do}</span><br><br>
+            `;
+            outputBox.innerHTML += htmlBlock;
+            
+            // สร้าง String สำหรับให้ปุ่ม Copy ทำงาน
+            generatedRPString += `[${name}]\n/me ${rp.me}\n/do ${rp.do}\n\n`;
+        });
+
+        // จำกัดเวลา RP ไม่ให้เกิน 60 วินาที
+        if (totalRPTime > 60) totalRPTime = 60;
+
+        document.getElementById('rpModal').classList.add('active');
     }
+
+    function copyRPText() {
+        playTabSound();
+        navigator.clipboard.writeText(generatedRPString.trim()).then(() => {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่ง RP แล้ว!', showConfirmButton: false, timer: 1500, background: '#141414', color: '#fff' });
+        });
+    }
+
+    function startRPProgress() {
+        playAddSound();
+        // ปิด Modal RP
+        document.getElementById('rpModal').classList.remove('active');
+        
+        // เปิดหน้าจอ Progress Fullscreen
+        const overlay = document.getElementById('rp-progress-overlay');
+        const progressBar = document.getElementById('rpProgressBar');
+        const timerText = document.getElementById('rpTimerText');
+        
+        overlay.classList.add('active');
+        progressBar.style.width = '0%';
+        
+        let currentTime = 0;
+        const updateInterval = 100; // อัปเดตทุก 0.1 วิ
+        const totalMs = totalRPTime * 1000;
+        
+        // เล่นเสียงเครื่องมือช่างครั้งแรก
+        playMechanicToolSound();
+        
+        // Loop เสียงเครื่องมือช่าง ทุกๆ 2.5 วินาทีระหว่างที่ซ่อม
+        const soundInterval = setInterval(() => {
+            playMechanicToolSound();
+        }, 2500);
+
+        rpInterval = setInterval(() => {
+            currentTime += updateInterval;
+            let percent = (currentTime / totalMs) * 100;
+            
+            progressBar.style.width = `${percent}%`;
+            timerText.innerText = `กำลังดำเนินการซ่อม: ${Math.floor(percent)}%`;
+
+            if (currentTime >= totalMs) {
+                clearInterval(rpInterval);
+                clearInterval(soundInterval); // หยุดเสียงเครื่องมือ
+                
+                timerText.innerText = `ซ่อมเสร็จสมบูรณ์! 100%`;
+                timerText.style.color = '#39FF14'; // สีเขียว
+                progressBar.style.background = '#39FF14';
+                progressBar.style.boxShadow = '0 0 15px #39FF14';
+                playSuccessSound();
+
+                // ปิดทิ้งหลังผ่านไป 2 วิ
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    // Reset CSS สำหรับรอบต่อไป
+                    setTimeout(() => {
+                        timerText.style.color = 'var(--tech-blue)';
+                        progressBar.style.background = 'var(--tech-blue)';
+                        progressBar.style.boxShadow = '0 0 15px var(--tech-blue)';
+                    }, 500);
+                }, 2000);
+            }
+        }, updateInterval);
+    }
+    /* ------------------------------ */
 
     function generateInvoiceHTML(user, note) {
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 24px; font-weight: 900;">TCN GARAGE</h2><p style="margin: 5px 0 0 0; font-size: 14px;">LOS SANTOS, SAN ANDREAS</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>ช่างผู้ทำรายการ:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">ราคา</th></tr>`;
@@ -434,25 +495,18 @@
         try { 
             const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
             const result = await res.json();
-            if (result.status === "success") { 
-                playSuccessSound(); 
-                // เคลียร์ Session ให้เปิดมาดูแอนิเมชันใหม่ได้หลังจากกดยืนยันเสร็จ (ถ้าไม่ชอบลบ 1 บรรทัดล่างนี้ทิ้งได้ครับ)
-                sessionStorage.removeItem('tcn_booted'); 
-                Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดและเริ่มใหม่', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
-            } else throw new Error();
+            if (result.status === "success") { playSuccessSound(); Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดและเริ่มใหม่', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); } 
+            else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
     }
-
-    function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
 
     function renderChart() {
         if (!itemsData.length) return; const ctx = document.getElementById('stockChart').getContext('2d'); if (chartInstance) chartInstance.destroy(); 
         const catData = { 'Customs': 0, 'Core Parts': 0, 'Service': 0 }; itemsData.forEach(i => { if(catData[i.category] !== undefined) catData[i.category] += (i.price * i.stock); });
-        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(catData), datasets: [{ label: 'มูลค่าคลังสินค้า (USD)', data: Object.values(catData), backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)'], borderColor: ['#D4AF37', '#36A2EB', '#FF6384'], borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
+        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(catData), datasets: [{ label: 'มูลค่าคลังสินค้า (USD)', data: Object.values(catData), backgroundColor: ['rgba(0, 229, 255, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(212, 175, 55, 0.7)'], borderColor: ['#00e5ff', '#36A2EB', '#D4AF37'], borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
     }
 
-    // เรียกใช้ฟังก์ชัน Boot เมื่อโหลดหน้าเว็บเสร็จ
-    window.onload = runBootSequence;
+    window.onload = fetchStock;
 </script>
 </body>
 </html>
