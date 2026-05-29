@@ -21,6 +21,7 @@
             --border-color: #2a2a2a;
             --danger: #b30000;
             --warning: #ff9900;
+            --success: #39FF14;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -56,7 +57,7 @@
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
         
         .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
-        .tabs { display: flex; gap: 10px; }
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
         .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
         .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
         
@@ -132,7 +133,7 @@
 <div class="status-bar">
     <div class="left">
         <span id="sb-date">--/--/----</span>
-        <span>TCN OS v2.9</span>
+        <span>TCN OS v3.2</span>
     </div>
     <div class="right">
         <span id="sb-time">--:--</span>
@@ -151,6 +152,8 @@
                 <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
                 <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติ (Log)</button>
+                <!-- 📦 ปุ่มสลับโหมดเติมสต็อก -->
+                <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
             </div>
             <div class="search-box" id="searchBox">
                 <input type="text" placeholder="ค้นหาชิ้นส่วน..." onkeyup="searchItems(this.value)">
@@ -180,18 +183,18 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')">
-            <h1>TCN Garage</h1>
-            <p>ระบบเบิกจ่ายอุปกรณ์ 📊</p>
+            <h1 id="brandTitle">TCN Garage</h1>
+            <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊</p>
         </div>
 
-        <label for="userSelect">เลือกพนักงานผู้เบิก:</label>
+        <label for="userSelect" id="userLabel">เลือกพนักงานผู้ทำรายการ:</label>
         <select id="userSelect">
             <option value="" disabled selected>-- กรุณาเลือก --</option>
             <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
             <option value="Lucas_Harper">2. Lucas Harper</option>
         </select>
 
-        <label>รายการที่เลือก:</label>
+        <label id="cartLabel">รายการที่เลือก:</label>
         <div class="sidebar-cart-list" id="sidebarCartList">
             <div style="text-align:center; color:var(--text-muted); font-size: 13px; padding: 20px 0;">ยังไม่มีอุปกรณ์ในตะกร้า</div>
         </div>
@@ -199,12 +202,12 @@
         <label for="noteInput">หมายเหตุ (ถ้ามี):</label>
         <textarea id="noteInput" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
 
-        <div class="total-box">
-            <span class="label">ยอดรวมการเบิก ($)</span>
+        <div class="total-box" id="totalBoxWrapper">
+            <span class="label" id="totalLabel">ยอดรวมการเบิก ($)</span>
             <span class="amount">$<span id="totalPrice">0</span></span>
         </div>
 
-        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">ยืนยันการเบิก</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">ยืนยันการทำรายการ</button>
     </div>
 </div>
 
@@ -221,6 +224,7 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
+    let isAdminMode = false; // ตัวแปรคุมสถานะระบบเติมสต็อก
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
@@ -243,7 +247,7 @@
             const response = await fetch(GOOGLE_SCRIPT_URL); 
             const result = await response.json(); 
             if (result.status === "success") { 
-                itemsData = result.data; logsData = result.logs || []; renderItems('Customs'); Swal.close(); 
+                itemsData = result.data; logsData = result.logs || []; renderItems(currentCategory); Swal.close(); 
             } else throw new Error(); 
         } 
         catch (error) { Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', background: '#141414', color: '#fff' }); }
@@ -255,7 +259,10 @@
 
         filteredItems.forEach(item => {
             let stockLabelHTML = item.stock > 5 ? `<span class="stock">เหลือ ${item.stock}</span>` : item.stock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${item.stock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-            let btnHTML = item.stock > 0 ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            
+            // โหมด Admin: ของหมดก็กดบวกเติมเพิ่มได้
+            let btnHTML = (item.stock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
@@ -271,8 +278,81 @@
         });
     }
 
+    // 📦 ฟังก์ชันปุ่มเปิด-ปิดโหมดเติมของ (Toggle)
+    function toggleRestockMode() {
+        playTabSound();
+        if (isAdminMode) {
+            // ถ้ายกเลิกโหมดเติมของ
+            isAdminMode = false;
+            clearCart();
+            updateAdminUI();
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'กลับสู่โหมดเบิกของปกติ', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
+        } else {
+            // ถ้าเปิดโหมดเติมของ
+            isAdminMode = true;
+            clearCart();
+            updateAdminUI();
+            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'เปิดโหมดเติมสต็อก', text: 'เลือกชื่อของคุณ แล้วกดเติมของได้เลยครับ', background: '#141414', color: '#fff', timer: 2000, showConfirmButton: false });
+        }
+    }
+
+    // รีเซ็ตหน้าตา UI สีส้ม/สีทอง 
+    function updateAdminUI() {
+        const brandTitle = document.getElementById('brandTitle');
+        const brandSub = document.getElementById('brandSub');
+        const submitBtn = document.getElementById('submitBtn');
+        const userLabel = document.getElementById('userLabel');
+        const totalLabel = document.getElementById('totalLabel');
+        const totalBoxWrapper = document.getElementById('totalBoxWrapper');
+        const btnRestock = document.getElementById('btnRestockMode');
+
+        if(isAdminMode) {
+            brandTitle.innerText = "TCN RESTOCK";
+            brandTitle.style.color = "var(--warning)";
+            brandSub.innerText = "โหมดเติมเสบียงเข้าสต็อกอู่ 📦";
+            userLabel.innerText = "เลือกพนักงานผู้ทำการเติมของ:";
+            totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)";
+            totalBoxWrapper.style.borderColor = "var(--warning)";
+            submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง";
+            submitBtn.style.background = "var(--warning)";
+            
+            // เปลี่ยนหน้าตาปุ่มสลับโหมด
+            btnRestock.style.background = 'var(--warning)';
+            btnRestock.style.color = '#000';
+            btnRestock.innerText = '❌ ยกเลิกเติมสต็อก';
+        } else {
+            brandTitle.innerText = "TCN Garage";
+            brandTitle.style.color = "var(--gold-main)";
+            brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊";
+            userLabel.innerText = "เลือกพนักงานผู้เบิก:";
+            totalLabel.innerText = "ยอดรวมการเบิก ($)";
+            totalBoxWrapper.style.borderColor = "var(--gold-main)";
+            submitBtn.innerText = "ยืนยันการเบิก";
+            submitBtn.style.background = "var(--gold-main)";
+
+            // เปลี่ยนหน้าตาปุ่มสลับโหมด
+            btnRestock.style.background = 'transparent';
+            btnRestock.style.color = 'var(--warning)';
+            btnRestock.innerText = '📦 เติมสต็อก';
+        }
+        
+        // อัปเดตไอเทมเพื่อเคลียร์สีปุ่มของหมด
+        if (currentCategory !== 'History') renderItems(currentCategory, currentSearchQuery);
+    }
+
+    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
+
     function changeTab(cat, el) { 
-        currentCategory = cat; document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); el.classList.add('active'); playTabSound(); 
+        currentCategory = cat; 
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); 
+        el.classList.add('active'); 
+        playTabSound(); 
+        
+        // ถ้าเข้าหน้า History ให้ปิดโหมด Admin อัตโนมัติ
+        if (cat === 'History' && isAdminMode) { 
+            isAdminMode = false; clearCart(); updateAdminUI(); 
+        }
+
         if (cat === 'History') {
             document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden'; document.getElementById('history-container').style.display = 'block'; renderHistory();
         } else {
@@ -281,13 +361,32 @@
     }
     
     function searchItems(val) { renderItems(currentCategory, val); }
-    function addItem(name) { let item = itemsData.find(i => i.name === name); if (item && item.stock > 0) { item.stock -= 1; total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI(); } else playErrorSound(); }
+
+    function addItem(name) { 
+        let item = itemsData.find(i => i.name === name); 
+        if (item) {
+            if(!isAdminMode && item.stock > 0) {
+                item.stock -= 1; total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI();
+            } else if (isAdminMode) {
+                // โหมดเติมของ: สต็อกจำลองบนจอไม่ต้องหักเลขลง ให้กดบวกของเข้าตะกร้าได้รัวๆ เลย
+                total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI();
+            } else {
+                playErrorSound();
+            }
+        } 
+    }
     
     function updateCartQty(name, change) {
         let item = itemsData.find(i => i.name === name); if (!item) return;
-        if (change > 0 && item.stock > 0) { item.stock -= 1; cart[name]++; total += item.price; playAddSound(); }
-        else if (change > 0 && item.stock === 0) { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
-        else if (change < 0 && cart[name] > 0) { item.stock += 1; cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playRemoveSound(); }
+        if (change > 0) { 
+            if (!isAdminMode && item.stock > 0) { item.stock -= 1; cart[name]++; total += item.price; playAddSound(); }
+            else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } // แอดมินกดบวกเพิ่มสต็อกได้ไร้ขีดจำกัด
+            else { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
+        }
+        else if (change < 0 && cart[name] > 0) { 
+            if (!isAdminMode) { item.stock += 1; }
+            cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playRemoveSound(); 
+        }
         updateUI();
     }
 
@@ -300,24 +399,43 @@
     function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory !== 'History') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
 
     function generateInvoiceHTML(user, note) {
-        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 24px; font-weight: 900;">TCN GARAGE</h2><p style="margin: 5px 0 0 0; font-size: 14px;">LOS SANTOS, SAN ANDREAS</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>ช่างผู้ทำรายการ:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">ราคา</th></tr>`;
+        let titleName = isAdminMode ? "TCN RESTOCK SLIP" : "TCN GARAGE";
+        let titleDesc = isAdminMode ? "RESTOCK INVENTORY REPORT" : "LOS SANTOS, SAN ANDREAS";
+        let userTitle = isAdminMode ? "ผู้ทำรายการเติม" : "ช่างผู้ทำรายการ";
+        let bottomDesc = isAdminMode ? "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***" : "*** แคปรูปบิลนี้เพื่อใช้เรียกเก็บเงินลูกค้า ***";
+        let amountLabel = isAdminMode ? "มูลค่าเสบียงรวม" : "ยอดรวมสุทธิ";
+
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
-        html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 18px;"><strong>ยอดรวมสุทธิ: <span style="font-size: 24px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">*** แคปรูปบิลนี้เพื่อใช้เรียกเก็บเงินลูกค้า ***</div></div>`; return html;
+        html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
 
     async function submitOrder() {
         const user = document.getElementById('userSelect').value; const note = document.getElementById('noteInput').value;
         if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกพนักงาน', background: '#141414', color: '#fff' }); }
         if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
-        let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
-        const payload = { name: user, order: orderArr.join(', '), note: note, total: total, cart: cart };
         
-        Swal.fire({ title: 'กำลังพิมพ์บิล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
+        
+        // ส่ง Action Type ไปให้ Sheet ตัดสินใจว่าจะ ลบสต็อก(เบิก) หรือ บวกสต็อก(เติม)
+        const payload = { 
+            name: user, 
+            order: orderArr.join(', '), 
+            note: note, 
+            total: total, 
+            cart: cart,
+            action: isAdminMode ? "restock" : "withdraw" 
+        };
+        
+        Swal.fire({ title: isAdminMode ? 'กำลังส่งข้อมูลเติมคลัง...' : 'กำลังพิมพ์บิล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
             const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
             const result = await res.json();
-            if (result.status === "success") { playSuccessSound(); Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดและเริ่มใหม่', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); } 
-            else throw new Error();
+            if (result.status === "success") { 
+                playSuccessSound(); 
+                isAdminMode = false; // ปลดโหมดแอดมินหลังทำรายการสำเร็จ
+                Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
+            } else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
     }
 
