@@ -32,7 +32,7 @@
                 linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
             background-size: 40px 40px; 
             color: var(--text-light); 
-            padding: 40px 20px 20px 20px; /* เผื่อที่ให้ Status Bar */
+            padding: 40px 20px 20px 20px; 
             display: flex; 
             justify-content: center; 
             min-height: 100vh;
@@ -104,11 +104,6 @@
         .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); transition: 0.3s;}
         .brand h1:hover { color: #fff; }
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
-        
-        /* 📦 Quick Combo Buttons */
-        .combo-container { display: flex; gap: 8px; margin-bottom: 15px; }
-        .combo-btn { flex: 1; background: #1a1a1a; border: 1px solid var(--gold-main); color: var(--gold-main); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; font-weight: bold; }
-        .combo-btn:hover { background: var(--gold-main); color: #000; }
 
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
         .sidebar select, .sidebar textarea { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
@@ -139,11 +134,10 @@
 </head>
 <body>
 
-<!-- 📱 Tablet Status Bar -->
 <div class="status-bar">
     <div class="left">
         <span id="sb-date">--/--/----</span>
-        <span>TCN OS v2.0</span>
+        <span>TCN OS v2.1</span>
     </div>
     <div class="right">
         <span id="sb-time">--:--</span>
@@ -169,9 +163,7 @@
         <div class="item-grid" id="item-grid-container"></div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
-        <!-- คลิกที่ชื่อแบรนด์เพื่อเปิด Dashboard -->
         <div class="brand" onclick="toggleDashboard()">
             <h1>TCN Garage</h1>
             <p>ระบบเบิกจ่ายอุปกรณ์ 📊</p>
@@ -183,12 +175,6 @@
             <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
             <option value="Lucas_Harper">2. Lucas Harper</option>
         </select>
-
-        <label>ชุดเบิกด่วน (Quick Combo):</label>
-        <div class="combo-container">
-            <button class="combo-btn" onclick="addCombo('Service')">🛠️ Full Service</button>
-            <button class="combo-btn" onclick="addCombo('Custom')">🎨 Body & Wheels</button>
-        </div>
 
         <label>รายการที่เลือก:</label>
         <div class="sidebar-cart-list" id="sidebarCartList">
@@ -207,7 +193,6 @@
     </div>
 </div>
 
-<!-- 📊 Dashboard Modal -->
 <div class="dashboard-modal" id="dashboardModal">
     <div class="dashboard-content">
         <button class="close-dash" onclick="toggleDashboard()">✕</button>
@@ -221,35 +206,67 @@
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = []; 
     let chartInstance = null;
 
-    // 🔊 ระบบเสียง (Web Audio API)
+    // 🔊 ระบบเสียงแบบคัสตอมหลายรูปแบบ (Web Audio API)
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
 
-    function playClickSound() {
+    // 1. เสียงเปลี่ยนแท็บ (คลิกนุ่มๆ)
+    function playTabSound() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // 2. เสียงเพิ่มของ (ป๊อปเสียงสูง)
+    function playAddSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); // เสียงลากขึ้น
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(); osc.stop(audioCtx.currentTime + 0.1);
     }
 
+    // 3. เสียงลบของ (ป๊อปเสียงต่ำ)
+    function playRemoveSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); // เสียงลากลง
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    // 4. เสียง Error (กดผิด, ของหมด)
+    function playErrorSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); // เสียงต่ำหึ่งๆ
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // 5. เสียงอนุมัติสำเร็จ
     function playSuccessSound() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc1 = audioCtx.createOscillator();
-        const osc2 = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
+        const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc1.type = 'triangle'; osc2.type = 'sine';
         osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
         osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
-        
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
-        
         osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
         osc1.start(); osc1.stop(audioCtx.currentTime + 0.15);
         osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4);
@@ -284,7 +301,7 @@
                                  `<span class="stock" style="color: var(--danger);">หมด!</span>`;
 
             let btnHTML = item.stock > 0 ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : 
-                                           `<button class="btn-out">สินค้าหมด</button>`;
+                                           `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
@@ -297,7 +314,8 @@
         currentCategory = cat;
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
-        playClickSound(); renderItems(currentCategory, currentSearchQuery);
+        playTabSound(); // ใช้เสียงแท็บ
+        renderItems(currentCategory, currentSearchQuery);
     }
     
     function searchItems(val) { renderItems(currentCategory, val); }
@@ -307,30 +325,30 @@
         if (item && item.stock > 0) {
             item.stock -= 1; total += item.price;
             cart[name] = (cart[name] || 0) + 1;
-            playClickSound(); updateUI();
+            playAddSound(); // เสียงตอนกดของลงตะกร้า
+            updateUI();
+        } else {
+            playErrorSound();
         }
     }
 
     function updateCartQty(name, change) {
         let item = itemsData.find(i => i.name === name);
         if (!item) return;
-        if (change > 0 && item.stock > 0) { item.stock -= 1; cart[name]++; total += item.price; playClickSound(); }
-        else if (change < 0 && cart[name] > 0) { item.stock += 1; cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playClickSound(); }
+        if (change > 0 && item.stock > 0) { 
+            item.stock -= 1; cart[name]++; total += item.price; 
+            playAddSound(); // เสียงกดบวก
+        }
+        else if (change > 0 && item.stock === 0) {
+            playErrorSound(); // เสียงเออเร่อถ้ากดบวกแต่ของหมด
+            Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' });
+        }
+        else if (change < 0 && cart[name] > 0) { 
+            item.stock += 1; cart[name]--; total -= item.price; 
+            if(cart[name]===0) delete cart[name]; 
+            playRemoveSound(); // เสียงกดลบ
+        }
         updateUI();
-    }
-
-    // 🔥 Combo Kits
-    function addCombo(type) {
-        const combos = {
-            'Service': ['Oil Filter', 'Air Filter', 'Spark Plugs'],
-            'Custom': ['Respray Kit', 'Vehicle Wheels Set']
-        };
-        let added = false;
-        combos[type].forEach(itemName => {
-            let item = itemsData.find(i => i.name === itemName);
-            if(item && item.stock > 0) { item.stock -= 1; total += item.price; cart[itemName] = (cart[itemName] || 0) + 1; added = true; }
-        });
-        if(added) { playClickSound(); updateUI(); }
     }
 
     function renderSidebarCart() {
@@ -348,7 +366,6 @@
         renderItems(currentCategory, currentSearchQuery); renderSidebarCart(); 
     }
 
-    // 🧾 สร้าง Digital Invoice HTML
     function generateInvoiceHTML(user, note) {
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
             <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
@@ -379,8 +396,8 @@
         const user = document.getElementById('userSelect').value;
         const note = document.getElementById('noteInput').value;
 
-        if (user === "") return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกพนักงาน', background: '#141414', color: '#fff' });
-        if (total === 0) return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' });
+        if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกพนักงาน', background: '#141414', color: '#fff' }); }
+        if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
 
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
         const payload = { name: user, order: orderArr.join(', '), note: note, total: total, cart: cart };
@@ -391,7 +408,7 @@
             const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
             if (result.status === "success") {
-                playSuccessSound();
+                playSuccessSound(); // เสียงอนุมัติสำเร็จ
                 Swal.fire({
                     html: generateInvoiceHTML(user, note),
                     width: 500,
@@ -401,7 +418,10 @@
                     allowOutsideClick: false
                 }).then(() => window.location.reload());
             } else throw new Error();
-        } catch (e) { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
+        } catch (e) { 
+            playErrorSound();
+            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); 
+        }
     }
 
     // 📊 ระบบ Dashboard
@@ -410,10 +430,11 @@
         const isActive = modal.classList.contains('active');
         
         if (!isActive) {
-            playClickSound();
+            playTabSound();
             modal.classList.add('active');
             renderChart();
         } else {
+            playTabSound();
             modal.classList.remove('active');
         }
     }
@@ -421,9 +442,8 @@
     function renderChart() {
         if (!itemsData.length) return;
         const ctx = document.getElementById('stockChart').getContext('2d');
-        if (chartInstance) chartInstance.destroy(); // ลบกราฟเก่าถ้ามี
+        if (chartInstance) chartInstance.destroy(); 
 
-        // คำนวณมูลค่ารวมแยกตามหมวดหมู่
         const catData = { 'Customs': 0, 'Core Parts': 0, 'Service': 0 };
         itemsData.forEach(i => { if(catData[i.category] !== undefined) catData[i.category] += (i.price * i.stock); });
 
