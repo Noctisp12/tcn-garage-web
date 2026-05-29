@@ -136,7 +136,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v4.3 (Stats Format)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v4.4</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -268,7 +268,6 @@
             const dateObj = new Date(log.time); 
             const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             
-            // อ่านค่าจาก log.type (คอลัมน์ F ใน Sheet)
             let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
             let totalColor = `color: var(--gold-main);`; 
             
@@ -280,8 +279,6 @@
             }
 
             let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
-
-            // ใช้ log.total ที่ส่งมาจากแบ็กเอนด์ (ถ้าเป็นเติมของ แบ็กเอนด์จะส่งมาเป็น 0 ในเวอร์ชันปัจจุบัน แต่ถ้าคุณส่งยอดรายจ่ายใน column 9 มันอาจไม่แสดงในที่นี้จนกว่าคุณจะอัปเดตแอป ให้แสดง 0 ไปก่อนหรือปล่อยให้เป็นไปตามข้อมูลที่ได้)
             let displayTotal = Number(log.total) || 0;
 
             tbody.innerHTML += `
@@ -303,7 +300,7 @@
             Swal.fire({ icon: 'success', title: 'โหมดเบิกของ', text: 'สลับกลับสู่โหมดเบิกจ่ายอะไหล่ปกติแล้ว', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         } else {
             isAdminMode = true; clearCart(); updateSidebarUI();
-            Swal.fire({ icon: 'info', title: 'โหมดเติมสต็อก', text: 'คุณกำลังทำรายการสั่งซื้อเสบียงเข้าอู่', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'info', title: 'โหมดเติมสต็อก', text: 'คุณกำลังทำรายการสั่งซื้ออะไหล่เข้าอู่', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         }
     }
 
@@ -319,7 +316,7 @@
 
         if(isAdminMode) {
             brandTitle.innerText = "TCN RESTOCK"; brandTitle.style.color = "var(--warning)";
-            brandSub.innerText = "โหมดเติมเสบียงเข้าสต็อกอู่ 📦";
+            brandSub.innerText = "โหมดเติมอะไหล่เข้าสต็อกอู่ 📦";
             userLabel.innerText = "เลือกพนักงานผู้เติมสต็อก:";
             totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)";
             totalBoxWrapper.style.borderColor = "var(--warning)";
@@ -415,7 +412,7 @@
 
         if(actionType === "restock") {
             titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT";
-            userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าเสบียงรวม";
+            userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม";
             bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***";
         }
 
