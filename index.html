@@ -10,18 +10,10 @@
 
     <style>
         :root {
-            --bg-body: #080808; 
-            --bg-panel: #141414;
-            --bg-input: #1f1f1f;
-            --gold-main: #D4AF37;
-            --gold-glow: rgba(212, 175, 55, 0.3);
-            --gold-hover: #F3E5AB;
-            --text-light: #f5f5f5;
-            --text-muted: #888888;
-            --border-color: #2a2a2a;
-            --danger: #b30000;
-            --warning: #ff9900;
-            --success: #39FF14;
+            --bg-body: #080808; --bg-panel: #141414; --bg-input: #1f1f1f;
+            --gold-main: #D4AF37; --gold-glow: rgba(212, 175, 55, 0.3); --gold-hover: #F3E5AB;
+            --text-light: #f5f5f5; --text-muted: #888888; --border-color: #2a2a2a;
+            --danger: #b30000; --warning: #ff9900; --success: #39FF14; --expense: #ff4d4d;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -29,11 +21,8 @@
         body { 
             background-color: var(--bg-body); 
             background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
-            background-size: 40px 40px; 
-            color: var(--text-light); 
-            padding: 40px 20px 20px 20px; 
-            display: flex; justify-content: center; 
-            min-height: 100vh; overflow-x: hidden;
+            background-size: 40px 40px; color: var(--text-light); padding: 40px 20px 20px 20px; 
+            display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden;
         }
 
         body::before {
@@ -75,9 +64,7 @@
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
-        
         .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
-        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
@@ -91,8 +78,10 @@
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
 
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
-        .sidebar select, .sidebar textarea { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
-        
+        .sidebar input[type="text"].user-input, .sidebar textarea { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
+        .sidebar input[type="text"].user-input:focus, .sidebar textarea:focus { border-color: var(--gold-main); }
+        .sidebar input[type="text"].user-input:disabled { background-color: rgba(0,0,0,0.5); color: #888; cursor: not-allowed; }
+
         .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
         .sidebar-cart-item:last-child { border-bottom: none; }
@@ -102,7 +91,7 @@
         .sidebar-qty-control { display: flex; align-items: center; gap: 8px; }
         .sidebar-qty-btn { background: #222; border: 1px solid var(--border-color); color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; }
         
-        .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; }
+        .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; transition: 0.3s; }
         .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
         .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
         .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
@@ -116,8 +105,19 @@
         .history-table th { color: var(--gold-main); background: rgba(0,0,0,0.5); font-weight: bold; }
         .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
         .history-table td.total-col { color: var(--gold-main); font-weight: bold; }
+        
+        .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; }
         .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--success); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--success); font-size: 12px; }
-        .badge-withdraw { background: rgba(179, 0, 0, 0.1); color: #ff4d4d; padding: 4px 8px; border-radius: 4px; border: 1px solid #ff4d4d; font-size: 12px; }
+        .badge-expense { background: rgba(255, 77, 77, 0.1); color: var(--expense); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--expense); font-size: 12px; }
+
+        /* 💸 Expense Form */
+        .expense-container { display: none; background: var(--bg-panel); border: 1px solid var(--expense); border-radius: 12px; padding: 30px; animation: fadeIn 0.4s ease-out; backdrop-filter: blur(5px); max-width: 600px; margin: 0 auto; text-align: center; }
+        .expense-container h2 { color: var(--expense); margin-bottom: 10px; font-size: 24px; }
+        .expense-container p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
+        .expense-input-group { text-align: left; margin-bottom: 20px; }
+        .expense-input-group label { display: block; color: var(--text-light); margin-bottom: 8px; font-size: 14px; }
+        .expense-input-group input { width: 100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        .expense-input-group input:focus { border-color: var(--expense); box-shadow: 0 0 10px rgba(255, 77, 77, 0.3); }
 
         /* 📊 Dashboard Modal */
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
@@ -128,22 +128,14 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.95); } to { transform: scale(1); } }
+        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="status-bar">
-    <div class="left">
-        <span id="sb-date">--/--/----</span>
-        <span>TCN OS v3.3</span>
-    </div>
-    <div class="right">
-        <span id="sb-time">--:--</span>
-        <div class="battery">
-            <div class="battery-icon"><div class="battery-level"></div></div>
-            <span>85%</span>
-        </div>
-    </div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v3.5</span></div>
+    <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
 <div class="layout-wrapper" id="main-layout">
@@ -153,8 +145,8 @@
                 <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
                 <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
-                <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติ (Log)</button>
-                <!-- 📦 ปุ่มสลับโหมดเติมสต็อก -->
+                <button class="tab-btn" onclick="changeTab('Expense', this)" style="border-color: var(--expense); color: var(--expense);">💸 บันทึกรายจ่าย</button>
+                <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติ</button>
                 <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
             </div>
             <div class="search-box" id="searchBox">
@@ -163,6 +155,19 @@
         </div>
         
         <div class="item-grid" id="item-grid-container"></div>
+
+        <div class="expense-container" id="expense-container">
+            <h2>💸 บันทึกรายจ่ายของอู่</h2>
+            <p>ใช้สำหรับบันทึกค่าใช้จ่ายต่างๆ เช่น จ่ายเงินเดือนช่าง, ค่าเช่า, หรือค่าไฟ</p>
+            <div class="expense-input-group">
+                <label>รายการที่จ่าย (เช่น เงินเดือน Lucas):</label>
+                <input type="text" id="expenseTitleInput" placeholder="ระบุชื่อรายการรายจ่าย...">
+            </div>
+            <div class="expense-input-group">
+                <label>จำนวนเงินที่จ่าย ($):</label>
+                <input type="number" id="expenseAmountInput" placeholder="0" oninput="updateExpenseTotal()">
+            </div>
+        </div>
 
         <div class="history-container" id="history-container">
             <h2>📜 ประวัติการทำรายการ (30 รายการล่าสุด)</h2>
@@ -182,26 +187,23 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')">
             <h1 id="brandTitle">TCN Garage</h1>
             <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊</p>
         </div>
 
-        <label for="userSelect" id="userLabel">เลือกพนักงานผู้ทำรายการ:</label>
-        <select id="userSelect">
-            <option value="" disabled selected>-- กรุณาเลือก --</option>
-            <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
-            <option value="Lucas_Harper">2. Lucas Harper</option>
-        </select>
+        <label for="userInput" id="userLabel">ชื่อผู้ทำรายการ:</label>
+        <input type="text" id="userInput" class="user-input" placeholder="พิมพ์ชื่อของคุณ เช่น Enzo Scarlatti">
 
-        <label id="cartLabel">รายการที่เลือก:</label>
-        <div class="sidebar-cart-list" id="sidebarCartList">
-            <div style="text-align:center; color:var(--text-muted); font-size: 13px; padding: 20px 0;">ยังไม่มีอุปกรณ์ในตะกร้า</div>
+        <div id="cartSection">
+            <label id="cartLabel">รายการที่เลือก:</label>
+            <div class="sidebar-cart-list" id="sidebarCartList">
+                <div style="text-align:center; color:var(--text-muted); font-size: 13px; padding: 20px 0;">ยังไม่มีอุปกรณ์ในตะกร้า</div>
+            </div>
         </div>
 
-        <label for="noteInput">หมายเหตุ (ถ้ามี):</label>
+        <label for="noteInput" id="noteLabel">หมายเหตุ (ถ้ามี):</label>
         <textarea id="noteInput" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
 
         <div class="total-box" id="totalBoxWrapper">
@@ -213,7 +215,6 @@
     </div>
 </div>
 
-<!-- 📊 Dashboard Modal -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -227,6 +228,7 @@
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
     let isAdminMode = false;
+    let isExpenseMode = false;
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
@@ -251,8 +253,7 @@
             if (result.status === "success") { 
                 itemsData = result.data; logsData = result.logs || []; renderItems(currentCategory); Swal.close(); 
             } else throw new Error(); 
-        } 
-        catch (error) { Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', background: '#141414', color: '#fff' }); }
+        } catch (error) { Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', background: '#141414', color: '#fff' }); }
     }
 
     function renderItems(category, searchQuery = '') {
@@ -261,16 +262,13 @@
 
         filteredItems.forEach(item => {
             let stockLabelHTML = item.stock > 5 ? `<span class="stock">เหลือ ${item.stock}</span>` : item.stock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${item.stock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-            
             let btnHTML = (item.stock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
-            
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
         });
     }
 
-    // 📜 แสดงประวัติพร้อมป้ายสถานะ (เบิก/เติม)
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         if (logsData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`; return; }
@@ -279,16 +277,15 @@
             const dateObj = new Date(log.time); 
             const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             
-            // แยกป้ายสถานะ เติม หรือ เบิก
-            let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; // ค่าเริ่มต้น
-            if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมของเข้าคลัง]")) {
-                statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`;
+            // แยกป้ายสถานะตามข้อมูลที่ส่งมา
+            let statusBadge = `<span class="badge-withdraw">🔧 เบิกซ่อม</span>`; 
+            if (log.type === "🟢 เติมของ" || log.order.includes("[เติมของเข้าคลัง]")) {
+                statusBadge = `<span class="badge-restock">📦 เติมของ</span>`;
+            } else if (log.type === "💸 รายจ่าย" || log.order.includes("💸 [รายจ่าย]")) {
+                statusBadge = `<span class="badge-expense">💸 รายจ่าย</span>`;
             }
 
-            // ทำความสะอาดข้อความ Order นิดหน่อย เพื่อไม่ให้รก
-            let cleanOrder = log.order.replace("📦 [เติมของเข้าคลัง] ", "");
-            
-            // รวมหมายเหตุเข้ากับ Order เพื่อประหยัดพื้นที่คอลัมน์
+            let cleanOrder = log.order.replace("📦 [เติมของเข้าคลัง] ", "").replace("💸 [รายจ่าย] ", "");
             let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
 
             tbody.innerHTML += `
@@ -306,52 +303,102 @@
     function toggleRestockMode() {
         playTabSound();
         if (isAdminMode) {
-            isAdminMode = false;
-            clearCart(); updateAdminUI();
+            isAdminMode = false; clearCart(); updateSidebarUI();
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'กลับสู่โหมดเบิกของปกติ', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         } else {
-            isAdminMode = true;
-            clearCart(); updateAdminUI();
-            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'เปิดโหมดเติมสต็อก', text: 'เลือกชื่อของคุณ แล้วกดเติมของได้เลยครับ', background: '#141414', color: '#fff', timer: 2000, showConfirmButton: false });
+            isAdminMode = true; isExpenseMode = false; clearCart(); updateSidebarUI();
+            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'เปิดโหมดเติมสต็อก', background: '#141414', color: '#fff', timer: 2000, showConfirmButton: false });
         }
     }
 
-    function updateAdminUI() {
+    function updateSidebarUI() {
         const brandTitle = document.getElementById('brandTitle');
         const brandSub = document.getElementById('brandSub');
         const submitBtn = document.getElementById('submitBtn');
+        const userLabel = document.getElementById('userLabel');
         const totalLabel = document.getElementById('totalLabel');
         const totalBoxWrapper = document.getElementById('totalBoxWrapper');
         const btnRestock = document.getElementById('btnRestockMode');
+        const cartSection = document.getElementById('cartSection');
+        const noteLabel = document.getElementById('noteLabel');
 
-        if(isAdminMode) {
+        if(isExpenseMode) {
+            brandTitle.innerText = "TCN EXPENSE"; brandTitle.style.color = "var(--expense)";
+            brandSub.innerText = "ระบบจัดการรายจ่ายอู่ 💸";
+            userLabel.innerText = "ผู้บันทึกรายจ่าย:";
+            totalLabel.innerText = "ยอดเงินที่จ่าย ($)";
+            totalBoxWrapper.style.borderColor = "var(--expense)";
+            submitBtn.innerText = "บันทึกรายจ่าย"; submitBtn.style.background = "var(--expense)";
+            btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก';
+            cartSection.style.display = "none"; // ซ่อนตะกร้า
+            noteLabel.innerText = "รายละเอียดเพิ่มเติม:";
+        }
+        else if(isAdminMode) {
             brandTitle.innerText = "TCN RESTOCK"; brandTitle.style.color = "var(--warning)";
             brandSub.innerText = "โหมดเติมเสบียงเข้าสต็อกอู่ 📦";
+            userLabel.innerText = "ผู้ทำการเติมสต็อก:";
             totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)";
             totalBoxWrapper.style.borderColor = "var(--warning)";
             submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง"; submitBtn.style.background = "var(--warning)";
             btnRestock.style.background = 'var(--warning)'; btnRestock.style.color = '#000'; btnRestock.innerText = '❌ ยกเลิกเติมสต็อก';
+            cartSection.style.display = "block";
+            noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
         } else {
             brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)";
             brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊";
+            userLabel.innerText = "ชื่อผู้ทำรายการ:";
             totalLabel.innerText = "ยอดรวมการเบิก ($)";
             totalBoxWrapper.style.borderColor = "var(--gold-main)";
-            submitBtn.innerText = "ยืนยันการเบิก"; submitBtn.style.background = "var(--gold-main)";
+            submitBtn.innerText = "ยืนยันการทำรายการ"; submitBtn.style.background = "var(--gold-main)";
             btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก';
+            cartSection.style.display = "block";
+            noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
         }
-        if (currentCategory !== 'History') renderItems(currentCategory, currentSearchQuery);
+
+        if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') {
+            renderItems(currentCategory, currentSearchQuery);
+        }
     }
 
-    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
+    function clearCart() { 
+        cart = {}; total = 0; 
+        document.getElementById('noteInput').value = ''; 
+        document.getElementById('expenseTitleInput').value = '';
+        document.getElementById('expenseAmountInput').value = '';
+        updateUI(); 
+    }
 
     function changeTab(cat, el) { 
-        currentCategory = cat; document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); el.classList.add('active'); playTabSound(); 
-        if (cat === 'History' && isAdminMode) { isAdminMode = false; clearCart(); updateAdminUI(); }
+        currentCategory = cat; 
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); 
+        el.classList.add('active'); 
+        playTabSound(); 
+        
+        // จัดการสถานะโหมดต่างๆ
+        if (cat === 'History') { 
+            isAdminMode = false; isExpenseMode = false; clearCart(); updateSidebarUI(); 
+        } else if (cat === 'Expense') {
+            isAdminMode = false; isExpenseMode = true; clearCart(); updateSidebarUI();
+        } else {
+            isExpenseMode = false;
+            // ถ้ามาจากหน้า History หรือ Expense แล้วกลับมาหน้าเบิก ให้คืนค่า UI
+            updateSidebarUI(); 
+        }
+
+        // จัดการการแสดงผลหน้าจอหลัก
+        document.getElementById('item-grid-container').style.display = 'none';
+        document.getElementById('history-container').style.display = 'none';
+        document.getElementById('expense-container').style.display = 'none';
+        document.getElementById('searchBox').style.visibility = 'hidden';
 
         if (cat === 'History') {
-            document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden'; document.getElementById('history-container').style.display = 'block'; renderHistory();
+            document.getElementById('history-container').style.display = 'block'; renderHistory();
+        } else if (cat === 'Expense') {
+            document.getElementById('expense-container').style.display = 'block';
         } else {
-            document.getElementById('item-grid-container').style.display = 'grid'; document.getElementById('searchBox').style.visibility = 'visible'; document.getElementById('history-container').style.display = 'none'; renderItems(currentCategory, currentSearchQuery); 
+            document.getElementById('item-grid-container').style.display = 'grid'; 
+            document.getElementById('searchBox').style.visibility = 'visible'; 
+            renderItems(currentCategory, currentSearchQuery); 
         }
     }
     
@@ -386,40 +433,80 @@
         keys.forEach(name => { let item = itemsData.find(i => i.name === name); list.innerHTML += `<div class="sidebar-cart-item"><div class="sidebar-cart-item-info"><h5>${name}</h5><span>$${(item.price * cart[name]).toLocaleString()}</span></div><div class="sidebar-qty-control"><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', -1)">-</button><span class="qty-num">${cart[name]}</span><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', 1)">+</button></div></div>`; });
     }
 
-    function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory !== 'History') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
+    function updateExpenseTotal() {
+        let val = document.getElementById('expenseAmountInput').value;
+        total = parseInt(val) || 0;
+        document.getElementById('totalPrice').innerText = total.toLocaleString();
+    }
 
-    function generateInvoiceHTML(user, note) {
-        let titleName = isAdminMode ? "TCN RESTOCK SLIP" : "TCN GARAGE";
-        let titleDesc = isAdminMode ? "RESTOCK INVENTORY REPORT" : "LOS SANTOS, SAN ANDREAS";
-        let userTitle = isAdminMode ? "ผู้ทำรายการเติม" : "ช่างผู้ทำรายการ";
-        let bottomDesc = isAdminMode ? "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***" : "*** แคปรูปบิลนี้เพื่อใช้เรียกเก็บเงินลูกค้า ***";
-        let amountLabel = isAdminMode ? "มูลค่าเสบียงรวม" : "ยอดรวมสุทธิ";
+    function updateUI() { 
+        document.getElementById('totalPrice').innerText = total.toLocaleString(); 
+        if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') { renderItems(currentCategory, currentSearchQuery); } 
+        renderSidebarCart(); 
+    }
 
-        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
-        for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
+    function generateInvoiceHTML(user, note, actionType) {
+        let titleName = "TCN GARAGE";
+        let titleDesc = "LOS SANTOS, SAN ANDREAS";
+        let userTitle = "ช่างผู้ทำรายการ";
+        let amountLabel = "ยอดรวมสุทธิ";
+        let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
+
+        if(actionType === "restock") {
+            titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT";
+            userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าเสบียงรวม";
+            bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***";
+        } else if (actionType === "expense") {
+            titleName = "TCN EXPENSE VOUCHER"; titleDesc = "SHOP EXPENSE REPORT";
+            userTitle = "ผู้บันทึกจ่าย"; amountLabel = "ยอดจ่ายออกรวม";
+            bottomDesc = "*** บันทึกรายจ่ายลงบัญชีอู่เรียบร้อย ***";
+        }
+
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.trim()}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
+        
+        if (actionType === "expense") {
+            let exName = document.getElementById('expenseTitleInput').value || "รายจ่ายทั่วไป";
+            html += `<tr><td style="padding: 5px 0;">${exName}</td><td style="text-align:center;">1</td><td style="text-align:right;">$${total.toLocaleString()}</td></tr>`;
+        } else {
+            for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
+        }
+        
         html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
 
     async function submitOrder() {
-        const user = document.getElementById('userSelect').value; const note = document.getElementById('noteInput').value;
-        if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกพนักงาน', background: '#141414', color: '#fff' }); }
-        if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
+        const user = document.getElementById('userInput').value; 
+        const note = document.getElementById('noteInput').value;
         
-        let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
+        if (user.trim() === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาพิมพ์ชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         
+        let finalOrder = "";
+        let currentAction = "withdraw";
+
+        if (isExpenseMode) {
+            let exName = document.getElementById('expenseTitleInput').value.trim();
+            if (exName === "" || total <= 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุชื่อรายการและจำนวนเงินรายจ่าย', background: '#141414', color: '#fff' }); }
+            finalOrder = exName;
+            currentAction = "expense";
+        } else {
+            if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
+            let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
+            finalOrder = orderArr.join(', ');
+            currentAction = isAdminMode ? "restock" : "withdraw";
+        }
+
         const payload = { 
-            name: user, order: orderArr.join(', '), note: note, total: total, cart: cart,
-            action: isAdminMode ? "restock" : "withdraw" 
+            name: user, order: finalOrder, note: note, total: total, cart: cart, action: currentAction 
         };
         
-        Swal.fire({ title: isAdminMode ? 'กำลังส่งข้อมูลเติมคลัง...' : 'กำลังพิมพ์บิล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'กำลังทำรายการ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
             const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                isAdminMode = false; 
-                Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
+                isAdminMode = false; isExpenseMode = false;
+                Swal.fire({ html: generateInvoiceHTML(user, note, currentAction), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
             } else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
     }
