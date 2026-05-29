@@ -10,10 +10,18 @@
 
     <style>
         :root {
-            --bg-body: #080808; --bg-panel: #141414; --bg-input: #1f1f1f;
-            --gold-main: #D4AF37; --gold-glow: rgba(212, 175, 55, 0.3); --gold-hover: #F3E5AB;
-            --text-light: #f5f5f5; --text-muted: #888888; --border-color: #2a2a2a;
-            --danger: #b30000; --warning: #ff9900; --success: #39FF14;
+            --bg-body: #080808; 
+            --bg-panel: #141414;
+            --bg-input: #1f1f1f;
+            --gold-main: #D4AF37;
+            --gold-glow: rgba(212, 175, 55, 0.3);
+            --gold-hover: #F3E5AB;
+            --text-light: #f5f5f5;
+            --text-muted: #888888;
+            --border-color: #2a2a2a;
+            --danger: #b30000;
+            --warning: #ff9900;
+            --success: #39FF14;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -21,8 +29,11 @@
         body { 
             background-color: var(--bg-body); 
             background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
-            background-size: 40px 40px; color: var(--text-light); padding: 40px 20px 20px 20px; 
-            display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden;
+            background-size: 40px 40px; 
+            color: var(--text-light); 
+            padding: 40px 20px 20px 20px; 
+            display: flex; justify-content: center; 
+            min-height: 100vh; overflow-x: hidden;
         }
 
         body::before {
@@ -31,6 +42,7 @@
             z-index: -1; pointer-events: none;
         }
 
+        /* 📱 Tablet Status Bar */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
         .status-bar .left { display: flex; gap: 15px; }
         .status-bar .right { display: flex; gap: 10px; align-items: center; }
@@ -63,7 +75,9 @@
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        
         .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
+        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
@@ -77,9 +91,9 @@
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
 
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
-        .sidebar input[type="text"].user-input, .sidebar textarea { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
-        .sidebar input[type="text"].user-input:focus, .sidebar textarea:focus { border-color: var(--gold-main); }
-        .sidebar input[type="text"].user-input:disabled { background-color: rgba(0,0,0,0.5); color: #888; cursor: not-allowed; }
+        .sidebar select, .sidebar textarea { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
+        .sidebar select:focus, .sidebar textarea:focus { border-color: var(--gold-main); }
+        .sidebar select:disabled { background-color: rgba(0,0,0,0.5); color: #888; cursor: not-allowed; }
 
         .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
@@ -123,7 +137,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v3.6</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v3.7</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -162,15 +176,18 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')">
             <h1 id="brandTitle">TCN Garage</h1>
             <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊</p>
         </div>
 
-        <label for="userInput" id="userLabel">ชื่อผู้ทำรายการ:</label>
-        <input type="text" id="userInput" class="user-input" placeholder="พิมพ์ชื่อของคุณ เช่น Enzo Scarlatti">
+        <label for="userSelect" id="userLabel">เลือกพนักงานผู้ทำรายการ:</label>
+        <select id="userSelect">
+            <option value="" disabled selected>-- กรุณาเลือก --</option>
+            <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
+            <option value="Lucas_Harper">2. Lucas Harper</option>
+        </select>
 
         <div id="cartSection">
             <label id="cartLabel">รายการที่เลือก:</label>
@@ -288,6 +305,7 @@
         const brandSub = document.getElementById('brandSub');
         const submitBtn = document.getElementById('submitBtn');
         const userLabel = document.getElementById('userLabel');
+        const userSelect = document.getElementById('userSelect');
         const totalLabel = document.getElementById('totalLabel');
         const totalBoxWrapper = document.getElementById('totalBoxWrapper');
         const btnRestock = document.getElementById('btnRestockMode');
@@ -304,16 +322,28 @@
             btnRestock.style.background = 'var(--warning)'; btnRestock.style.color = '#000'; btnRestock.innerText = '❌ ยกเลิกเติมสต็อก';
             cartSection.style.display = "block";
             noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
+            
+            // ตอนเติมสต็อก บังคับเลือกเป็นฝ่ายบริหาร MANAGEMENT อัตโนมัติเพื่อความชัดเจน
+            userSelect.innerHTML = `<option value="MANAGEMENT" selected>Manager / Owner</option>`;
+            userSelect.disabled = true;
         } else {
             brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)";
             brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊";
-            userLabel.innerText = "ชื่อผู้ทำรายการ:";
+            userLabel.innerText = "เลือกพนักงานผู้เบิก:";
             totalLabel.innerText = "ยอดรวมการเบิก ($)";
             totalBoxWrapper.style.borderColor = "var(--gold-main)";
             submitBtn.innerText = "ยืนยันการทำรายการ"; submitBtn.style.background = "var(--gold-main)";
             btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก';
             cartSection.style.display = "block";
             noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
+            
+            // คืนค่ารายชื่อช่างในโหมดเบิกของปกติ
+            userSelect.innerHTML = `
+                <option value="" disabled selected>-- กรุณาเลือก --</option>
+                <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
+                <option value="Lucas_Harper">2. Lucas Harper</option>
+            `;
+            userSelect.disabled = false;
         }
 
         if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') {
@@ -321,11 +351,7 @@
         }
     }
 
-    function clearCart() { 
-        cart = {}; total = 0; 
-        document.getElementById('noteInput').value = ''; 
-        updateUI(); 
-    }
+    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
 
     function changeTab(cat, el) { 
         currentCategory = cat; 
@@ -402,7 +428,7 @@
             bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***";
         }
 
-        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.trim()}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
         
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
         
@@ -410,10 +436,10 @@
     }
 
     async function submitOrder() {
-        const user = document.getElementById('userInput').value; 
+        const user = document.getElementById('userSelect').value; 
         const note = document.getElementById('noteInput').value;
         
-        if (user.trim() === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาพิมพ์ชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
+        if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
         
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
