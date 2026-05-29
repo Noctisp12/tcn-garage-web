@@ -116,6 +116,8 @@
         .history-table th { color: var(--gold-main); background: rgba(0,0,0,0.5); font-weight: bold; }
         .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
         .history-table td.total-col { color: var(--gold-main); font-weight: bold; }
+        .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--success); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--success); font-size: 12px; }
+        .badge-withdraw { background: rgba(179, 0, 0, 0.1); color: #ff4d4d; padding: 4px 8px; border-radius: 4px; border: 1px solid #ff4d4d; font-size: 12px; }
 
         /* 📊 Dashboard Modal */
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
@@ -133,7 +135,7 @@
 <div class="status-bar">
     <div class="left">
         <span id="sb-date">--/--/----</span>
-        <span>TCN OS v3.2</span>
+        <span>TCN OS v3.3</span>
     </div>
     <div class="right">
         <span id="sb-time">--:--</span>
@@ -163,14 +165,14 @@
         <div class="item-grid" id="item-grid-container"></div>
 
         <div class="history-container" id="history-container">
-            <h2>📜 ประวัติการเบิกอุปกรณ์ (30 รายการล่าสุด)</h2>
+            <h2>📜 ประวัติการทำรายการ (30 รายการล่าสุด)</h2>
             <table class="history-table">
                 <thead>
                     <tr>
                         <th>เวลาทำรายการ</th>
+                        <th>สถานะ</th>
                         <th>พนักงาน</th>
                         <th>รายการ</th>
-                        <th>หมายเหตุ</th>
                         <th>ยอดรวม ($)</th>
                     </tr>
                 </thead>
@@ -224,7 +226,7 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
-    let isAdminMode = false; // ตัวแปรคุมสถานะระบบเติมสต็อก
+    let isAdminMode = false;
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
@@ -260,7 +262,6 @@
         filteredItems.forEach(item => {
             let stockLabelHTML = item.stock > 5 ? `<span class="stock">เหลือ ${item.stock}</span>` : item.stock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${item.stock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
             
-            // โหมด Admin: ของหมดก็กดบวกเติมเพิ่มได้
             let btnHTML = (item.stock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
@@ -269,89 +270,83 @@
         });
     }
 
+    // 📜 แสดงประวัติพร้อมป้ายสถานะ (เบิก/เติม)
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         if (logsData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`; return; }
+        
         logsData.forEach(log => {
-            const dateObj = new Date(log.time); const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-            tbody.innerHTML += `<tr><td>${dateStr}</td><td>${(log.mechanic || '').replace('_', ' ')}</td><td style="font-size: 12px; color: #ccc;">${log.order}</td><td style="font-size: 12px; color: #ccc;">${log.note || '-'}</td><td class="total-col">$${Number(log.total).toLocaleString()}</td></tr>`;
+            const dateObj = new Date(log.time); 
+            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            
+            // แยกป้ายสถานะ เติม หรือ เบิก
+            let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; // ค่าเริ่มต้น
+            if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมของเข้าคลัง]")) {
+                statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`;
+            }
+
+            // ทำความสะอาดข้อความ Order นิดหน่อย เพื่อไม่ให้รก
+            let cleanOrder = log.order.replace("📦 [เติมของเข้าคลัง] ", "");
+            
+            // รวมหมายเหตุเข้ากับ Order เพื่อประหยัดพื้นที่คอลัมน์
+            let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${dateStr}</td>
+                    <td>${statusBadge}</td>
+                    <td>${(log.mechanic || '').replace('_', ' ')}</td>
+                    <td style="font-size: 13px; color: #ccc;">${cleanOrder} ${noteHtml}</td>
+                    <td class="total-col">$${Number(log.total).toLocaleString()}</td>
+                </tr>
+            `;
         });
     }
 
-    // 📦 ฟังก์ชันปุ่มเปิด-ปิดโหมดเติมของ (Toggle)
     function toggleRestockMode() {
         playTabSound();
         if (isAdminMode) {
-            // ถ้ายกเลิกโหมดเติมของ
             isAdminMode = false;
-            clearCart();
-            updateAdminUI();
+            clearCart(); updateAdminUI();
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'กลับสู่โหมดเบิกของปกติ', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         } else {
-            // ถ้าเปิดโหมดเติมของ
             isAdminMode = true;
-            clearCart();
-            updateAdminUI();
+            clearCart(); updateAdminUI();
             Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'เปิดโหมดเติมสต็อก', text: 'เลือกชื่อของคุณ แล้วกดเติมของได้เลยครับ', background: '#141414', color: '#fff', timer: 2000, showConfirmButton: false });
         }
     }
 
-    // รีเซ็ตหน้าตา UI สีส้ม/สีทอง 
     function updateAdminUI() {
         const brandTitle = document.getElementById('brandTitle');
         const brandSub = document.getElementById('brandSub');
         const submitBtn = document.getElementById('submitBtn');
-        const userLabel = document.getElementById('userLabel');
         const totalLabel = document.getElementById('totalLabel');
         const totalBoxWrapper = document.getElementById('totalBoxWrapper');
         const btnRestock = document.getElementById('btnRestockMode');
 
         if(isAdminMode) {
-            brandTitle.innerText = "TCN RESTOCK";
-            brandTitle.style.color = "var(--warning)";
+            brandTitle.innerText = "TCN RESTOCK"; brandTitle.style.color = "var(--warning)";
             brandSub.innerText = "โหมดเติมเสบียงเข้าสต็อกอู่ 📦";
-            userLabel.innerText = "เลือกพนักงานผู้ทำการเติมของ:";
             totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)";
             totalBoxWrapper.style.borderColor = "var(--warning)";
-            submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง";
-            submitBtn.style.background = "var(--warning)";
-            
-            // เปลี่ยนหน้าตาปุ่มสลับโหมด
-            btnRestock.style.background = 'var(--warning)';
-            btnRestock.style.color = '#000';
-            btnRestock.innerText = '❌ ยกเลิกเติมสต็อก';
+            submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง"; submitBtn.style.background = "var(--warning)";
+            btnRestock.style.background = 'var(--warning)'; btnRestock.style.color = '#000'; btnRestock.innerText = '❌ ยกเลิกเติมสต็อก';
         } else {
-            brandTitle.innerText = "TCN Garage";
-            brandTitle.style.color = "var(--gold-main)";
+            brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)";
             brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊";
-            userLabel.innerText = "เลือกพนักงานผู้เบิก:";
             totalLabel.innerText = "ยอดรวมการเบิก ($)";
             totalBoxWrapper.style.borderColor = "var(--gold-main)";
-            submitBtn.innerText = "ยืนยันการเบิก";
-            submitBtn.style.background = "var(--gold-main)";
-
-            // เปลี่ยนหน้าตาปุ่มสลับโหมด
-            btnRestock.style.background = 'transparent';
-            btnRestock.style.color = 'var(--warning)';
-            btnRestock.innerText = '📦 เติมสต็อก';
+            submitBtn.innerText = "ยืนยันการเบิก"; submitBtn.style.background = "var(--gold-main)";
+            btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก';
         }
-        
-        // อัปเดตไอเทมเพื่อเคลียร์สีปุ่มของหมด
         if (currentCategory !== 'History') renderItems(currentCategory, currentSearchQuery);
     }
 
     function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
 
     function changeTab(cat, el) { 
-        currentCategory = cat; 
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); 
-        el.classList.add('active'); 
-        playTabSound(); 
-        
-        // ถ้าเข้าหน้า History ให้ปิดโหมด Admin อัตโนมัติ
-        if (cat === 'History' && isAdminMode) { 
-            isAdminMode = false; clearCart(); updateAdminUI(); 
-        }
+        currentCategory = cat; document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); el.classList.add('active'); playTabSound(); 
+        if (cat === 'History' && isAdminMode) { isAdminMode = false; clearCart(); updateAdminUI(); }
 
         if (cat === 'History') {
             document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden'; document.getElementById('history-container').style.display = 'block'; renderHistory();
@@ -365,14 +360,9 @@
     function addItem(name) { 
         let item = itemsData.find(i => i.name === name); 
         if (item) {
-            if(!isAdminMode && item.stock > 0) {
-                item.stock -= 1; total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI();
-            } else if (isAdminMode) {
-                // โหมดเติมของ: สต็อกจำลองบนจอไม่ต้องหักเลขลง ให้กดบวกของเข้าตะกร้าได้รัวๆ เลย
-                total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI();
-            } else {
-                playErrorSound();
-            }
+            if(!isAdminMode && item.stock > 0) { item.stock -= 1; total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI(); } 
+            else if (isAdminMode) { total += item.price; cart[name] = (cart[name] || 0) + 1; playAddSound(); updateUI(); } 
+            else { playErrorSound(); }
         } 
     }
     
@@ -380,7 +370,7 @@
         let item = itemsData.find(i => i.name === name); if (!item) return;
         if (change > 0) { 
             if (!isAdminMode && item.stock > 0) { item.stock -= 1; cart[name]++; total += item.price; playAddSound(); }
-            else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } // แอดมินกดบวกเพิ่มสต็อกได้ไร้ขีดจำกัด
+            else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } 
             else { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
         }
         else if (change < 0 && cart[name] > 0) { 
@@ -417,13 +407,8 @@
         
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
         
-        // ส่ง Action Type ไปให้ Sheet ตัดสินใจว่าจะ ลบสต็อก(เบิก) หรือ บวกสต็อก(เติม)
         const payload = { 
-            name: user, 
-            order: orderArr.join(', '), 
-            note: note, 
-            total: total, 
-            cart: cart,
+            name: user, order: orderArr.join(', '), note: note, total: total, cart: cart,
             action: isAdminMode ? "restock" : "withdraw" 
         };
         
@@ -433,7 +418,7 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                isAdminMode = false; // ปลดโหมดแอดมินหลังทำรายการสำเร็จ
+                isAdminMode = false; 
                 Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
             } else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
