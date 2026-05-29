@@ -48,6 +48,28 @@
             pointer-events: none;
         }
 
+        /* 💻 BOOT SEQUENCE SCREEN */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050505;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+            padding: 50px;
+            font-family: 'Courier New', Courier, monospace;
+            transition: opacity 1s ease-out, visibility 1s;
+        }
+        #boot-screen.hidden { opacity: 0; visibility: hidden; }
+        .boot-line {
+            color: var(--gold-main); font-size: 14px; margin-bottom: 8px; opacity: 0;
+            text-shadow: 0 0 5px var(--gold-glow);
+        }
+        .boot-cursor {
+            display: inline-block; width: 10px; height: 15px; background-color: var(--gold-main);
+            animation: blink 0.8s infinite; margin-left: 5px; vertical-align: middle;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
         /* 📱 Tablet Status Bar */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
         .status-bar .left { display: flex; gap: 15px; }
@@ -57,7 +79,9 @@
         .battery-icon::after { content: ''; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: #aaa; }
         .battery-level { height: 100%; width: 85%; background: var(--text-light); }
 
-        .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
+        .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; opacity: 0; transition: opacity 1.5s ease-in; }
+        .layout-wrapper.ready { opacity: 1; }
+
         .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
         
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
@@ -114,7 +138,7 @@
         .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
         .btn-submit:hover { background-color: var(--gold-hover); box-shadow: 0 0 15px var(--gold-glow); transform: translateY(-2px); }
 
-        /* 📜 History Table UI */
+        /* 📜 History Table */
         .history-container { display: none; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; animation: fadeIn 0.4s ease-out; backdrop-filter: blur(5px); }
         .history-container h2 { color: var(--gold-main); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -136,10 +160,16 @@
 </head>
 <body>
 
+<!-- 💻 BOOT SEQUENCE SCREEN -->
+<div id="boot-screen">
+    <div id="boot-text-container"></div>
+    <div class="boot-cursor"></div>
+</div>
+
 <div class="status-bar">
     <div class="left">
         <span id="sb-date">--/--/----</span>
-        <span>TCN OS v2.5</span>
+        <span>TCN OS v2.6</span>
     </div>
     <div class="right">
         <span id="sb-time">--:--</span>
@@ -150,7 +180,7 @@
     </div>
 </div>
 
-<div class="layout-wrapper">
+<div class="layout-wrapper" id="main-layout">
     <div class="main-content">
         <div class="header-controls">
             <div class="tabs" id="tab-container">
@@ -179,11 +209,12 @@
                     </tr>
                 </thead>
                 <tbody id="history-table-body">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
 
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')">
             <h1>TCN Garage</h1>
@@ -226,10 +257,69 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
-
-    // 🔊 เสียง
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
+
+    // 🚀 BOOT SEQUENCE LOGIC
+    const bootLines = [
+        "TCN_OS_v2.6 BOOT SEQUENCE INITIATED...",
+        "CONNECTING TO LOS SANTOS DATABASES... [OK]",
+        "MOUNTING SECURE DRIVES... [OK]",
+        "LOADING SCARLATTI PERFORMANCE PROTOCOLS... [OK]",
+        "VERIFYING MECHANIC CREDENTIALS... [AUTHORIZED]",
+        "SYNCING LIVE INVENTORY DATA...",
+        "SYSTEM READY."
+    ];
+
+    function runBootSequence() {
+        const container = document.getElementById('boot-text-container');
+        const bootScreen = document.getElementById('boot-screen');
+        const mainLayout = document.getElementById('main-layout');
+        let delay = 0;
+
+        // เพื่อไม่ให้รำคาญเวลา Refresh จะเช็ค Session Storage ไว้ว่าโหลดแล้วหรือยัง
+        // ถ้าอยากให้โหลดทุกครั้งที่เข้าเว็บ ให้ลบ 2 บรรทัดด้านล่างนี้ออกครับ
+        if (sessionStorage.getItem('tcn_booted')) {
+            bootScreen.style.display = 'none';
+            mainLayout.classList.add('ready');
+            fetchStock();
+            return;
+        }
+
+        bootLines.forEach((line, index) => {
+            setTimeout(() => {
+                const p = document.createElement('div');
+                p.className = 'boot-line';
+                p.innerText = line;
+                container.appendChild(p);
+                // ทำให้ค่อยๆ ชัดขึ้น
+                setTimeout(() => p.style.opacity = 1, 50);
+                
+                // เล่นเสียง Tick เบาๆ ตอนโหลดตัวหนังสือ
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = 'square'; osc.frequency.setValueAtTime(800 + (Math.random()*200), audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+
+            }, delay);
+            delay += 400; // ห่างกันบรรทัดละ 0.4 วินาที
+        });
+
+        setTimeout(() => {
+            bootScreen.classList.add('hidden');
+            setTimeout(() => {
+                bootScreen.style.display = 'none';
+                mainLayout.classList.add('ready');
+                sessionStorage.setItem('tcn_booted', 'true');
+                fetchStock(); // โหลดข้อมูลจาก Sheet หลังจาก Boot เสร็จ
+            }, 1000);
+        }, delay + 600);
+    }
+
+
     function playTabSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.05); }
     function playAddSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
     function playRemoveSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
@@ -249,7 +339,7 @@
             const result = await response.json(); 
             if (result.status === "success") { 
                 itemsData = result.data; 
-                logsData = result.logs || []; // รับประวัติมาเก็บไว้
+                logsData = result.logs || []; 
                 renderItems('Customs'); 
                 Swal.close(); 
             } else throw new Error(); 
@@ -271,33 +361,19 @@
         });
     }
 
-    // 📜 ฟังก์ชันวาดตารางประวัติ
     function renderHistory() {
         const tbody = document.getElementById('history-table-body');
         tbody.innerHTML = '';
-        if (logsData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`;
-            return;
-        }
+        if (logsData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`; return; }
         
         logsData.forEach(log => {
             const dateObj = new Date(log.time);
             const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             const mechName = (log.mechanic || '').replace('_', ' ');
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${dateStr}</td>
-                    <td>${mechName}</td>
-                    <td style="font-size: 12px; color: #ccc;">${log.order}</td>
-                    <td style="font-size: 12px; color: #ccc;">${log.note || '-'}</td>
-                    <td class="total-col">$${Number(log.total).toLocaleString()}</td>
-                </tr>
-            `;
+            tbody.innerHTML += `<tr><td>${dateStr}</td><td>${mechName}</td><td style="font-size: 12px; color: #ccc;">${log.order}</td><td style="font-size: 12px; color: #ccc;">${log.note || '-'}</td><td class="total-col">$${Number(log.total).toLocaleString()}</td></tr>`;
         });
     }
 
-    // 🔀 ฟังก์ชันสลับแท็บใหม่ (รองรับแท็บ History)
     function changeTab(cat, el) { 
         currentCategory = cat; 
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); 
@@ -337,9 +413,7 @@
 
     function updateUI() { 
         document.getElementById('totalPrice').innerText = total.toLocaleString(); 
-        if (currentCategory !== 'History') {
-            renderItems(currentCategory, currentSearchQuery); 
-        }
+        if (currentCategory !== 'History') { renderItems(currentCategory, currentSearchQuery); }
         renderSidebarCart(); 
     }
 
@@ -362,6 +436,8 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
+                // เคลียร์ Session ให้เปิดมาดูแอนิเมชันใหม่ได้หลังจากกดยืนยันเสร็จ (ถ้าไม่ชอบลบ 1 บรรทัดล่างนี้ทิ้งได้ครับ)
+                sessionStorage.removeItem('tcn_booted'); 
                 Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดและเริ่มใหม่', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
             } else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
@@ -375,7 +451,8 @@
         chartInstance = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(catData), datasets: [{ label: 'มูลค่าคลังสินค้า (USD)', data: Object.values(catData), backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)'], borderColor: ['#D4AF37', '#36A2EB', '#FF6384'], borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
     }
 
-    window.onload = fetchStock;
+    // เรียกใช้ฟังก์ชัน Boot เมื่อโหลดหน้าเว็บเสร็จ
+    window.onload = runBootSequence;
 </script>
 </body>
 </html>
