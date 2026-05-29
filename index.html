@@ -122,19 +122,16 @@
         .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; }
         .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--danger); font-size: 12px; }
 
-        /* 📊 Dashboard Modal & Mechanic Stats */
+        /* 📊 Dashboard Modal */
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
         .app-modal.active { visibility: visible; opacity: 1; }
-        .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 90%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 600px; max-width: 90%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; }
         .close-app { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; background: none; border: none; transition: 0.2s; }
         .close-app:hover { color: var(--danger); }
         
-        /* 🏆 Leaderboard CSS */
-        .mechanic-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
-        .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; transition: 0.3s; border-left: 3px solid var(--gold-main); }
-        .mechanic-stat-card:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); transform: translateY(-2px); }
-        .mechanic-stat-card h4 { color: #ccc; font-size: 14px; margin-bottom: 8px; font-weight: normal; }
-        .mechanic-stat-card span.amt { color: var(--gold-main); font-size: 22px; font-weight: bold; }
+        .filter-container { text-align: center; margin-bottom: 20px; }
+        .filter-select { background: #222; color: var(--gold-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 5px; font-size: 14px; outline: none; cursor: pointer; }
+        .filter-select:focus { border-color: var(--gold-main); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.95); } to { transform: scale(1); } }
@@ -144,7 +141,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v4.6 (Mechanic Totals)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v4.9</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -184,9 +181,9 @@
     </div>
 
     <div class="sidebar">
-        <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูสรุปยอดและกราฟ">
+        <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
-            <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดรวม)</p>
+            <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูกระแสเงินสด)</p>
         </div>
 
         <label for="userSelect" id="userLabel">เลือกพนักงานผู้ทำรายการ:</label>
@@ -218,14 +215,17 @@
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
+        <h2 id="chartMainTitle" style="color: var(--gold-main); margin-bottom: 10px; text-align: center;">📊 สรุปยอดบัญชีรายวัน</h2>
         
-        <h2 style="color: var(--gold-main); margin-bottom: 20px;">📊 สรุปมูลค่าคลังสินค้า TCN</h2>
-        <canvas id="stockChart" height="80"></canvas>
+        <div class="filter-container">
+            <select id="timeFilter" class="filter-select" onchange="renderChart()">
+                <option value="0" selected>📅 ดูยอดเฉพาะวันนี้</option>
+                <option value="1">📅 ดูยอดย้อนหลัง 1 วัน (วานนี้)</option>
+                <option value="2">📅 ดูยอดย้อนหลัง 2 วัน</option>
+            </select>
+        </div>
 
-        <h3 style="color:#fff; margin-top:30px; font-weight:normal; border-bottom:1px dashed #333; padding-bottom:10px;">🏆 ยอดเบิกล่าสุดแยกตามช่าง</h3>
-        <div id="mechanicStatsContainer" class="mechanic-stats">
-            </div>
-
+        <canvas id="stockChart" height="150"></canvas>
     </div>
 </div>
 
@@ -267,7 +267,7 @@
 
         filteredItems.forEach(item => {
             let stockLabelHTML = item.stock > 5 ? `<span class="stock">เหลือ ${item.stock}</span>` : item.stock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${item.stock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-            let btnHTML = (item.stock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            let btnHTML = (item.stock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
@@ -278,7 +278,8 @@
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         if (logsData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการ</td></tr>`; return; }
         
-        logsData.forEach(log => {
+        let displayLogs = logsData.slice(0, 30);
+        displayLogs.forEach(log => {
             const dateObj = new Date(log.time); 
             const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             
@@ -338,7 +339,7 @@
             noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
         } else {
             brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)";
-            brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดรวม)";
+            brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูกระแสเงินสด)";
             userLabel.innerText = "เลือกพนักงานผู้เบิก:";
             totalLabel.innerText = "ยอดรวมการเบิก ($)";
             totalBoxWrapper.style.borderColor = "var(--gold-main)";
@@ -417,126 +418,107 @@
     }
 
     function generateInvoiceHTML(user, note, actionType) {
-        let titleName = "TCN GARAGE";
-        let titleDesc = "LOS SANTOS, SAN ANDREAS";
-        let userTitle = "ช่างผู้ทำรายการ";
-        let amountLabel = "ยอดรวมสุทธิ";
-        let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
-
-        if(actionType === "restock") {
-            titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT";
-            userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม";
-            bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***";
-        }
-
+        let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
+        if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
-        
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
-        
         html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
 
     async function submitOrder() {
-        const userSelect = document.getElementById('userSelect');
-        const user = userSelect.options[userSelect.selectedIndex].value; 
-        const note = document.getElementById('noteInput').value;
-        
+        const userSelect = document.getElementById('userSelect'); const user = userSelect.options[userSelect.selectedIndex].value; const note = document.getElementById('noteInput').value;
         if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
-        
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
-        let finalOrder = orderArr.join(', ');
-        let currentAction = isAdminMode ? "restock" : "withdraw";
-
-        const payload = { 
-            name: user, order: finalOrder, note: note, total: total, cart: cart, action: currentAction 
-        };
-        
+        let finalOrder = orderArr.join(', '); let currentAction = isAdminMode ? "restock" : "withdraw";
+        const payload = { name: user, order: finalOrder, note: note, total: total, cart: cart, action: currentAction };
         Swal.fire({ title: 'กำลังทำรายการ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
-            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
-            const result = await res.json();
-            if (result.status === "success") { 
-                playSuccessSound(); 
-                isAdminMode = false;
-                Swal.fire({ html: generateInvoiceHTML(user, note, currentAction), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
-            } else throw new Error();
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await res.json();
+            if (result.status === "success") { playSuccessSound(); isAdminMode = false; Swal.fire({ html: generateInvoiceHTML(user, note, currentAction), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); } else throw new Error();
         } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
     }
 
-    /* 📊 อัปเดตฟังก์ชัน Chart เพื่อเพิ่ม สรุปยอดช่าง */
     function toggleApp(appId) { 
         const modal = document.getElementById(appId); 
-        if (!modal.classList.contains('active')) { 
-            playTabSound(); 
-            modal.classList.add('active'); 
-            if (appId === 'dashboardModal') renderChart(); 
-        } else { 
-            playTabSound(); 
-            modal.classList.remove('active'); 
-        } 
+        if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } 
     }
 
+    /* 🕒 ฟังก์ชันช่วยแปลงและเช็ควันที่ */
+    function parseDateString(dateStr) {
+        if (!dateStr) return new Date();
+        if (dateStr instanceof Date) return dateStr;
+        let parts = dateStr.split(/[\s,]+/);
+        let datePart = parts[0]; 
+        let dmy = datePart.split('/');
+        if (dmy.length === 3) {
+            return new Date(parseInt(dmy[2]), parseInt(dmy[1]) - 1, parseInt(dmy[0])); 
+        }
+        return new Date(dateStr);
+    }
+
+    /* 📊 ระบบคัดกรองแบบเจาะจงรายวัน (วันนี้ / วานนี้ / ย้อนหลัง 2 วัน) แยกออกจากกันชัดเจน */
     function renderChart() {
-        // 1. วาดกราฟมูลค่าคลังสินค้า (เหมือนเดิม)
-        if (!itemsData.length) return; 
+        if (!logsData.length) return; 
+        
+        let filterIndex = parseInt(document.getElementById('timeFilter').value); // 0, 1, หรือ 2
+        let today = new Date();
+        today.setHours(0,0,0,0);
+        
+        // คำนวณหาวันเดี่ยวๆ ที่เลือก
+        let targetDate = new Date(today);
+        targetDate.setDate(today.getDate() - filterIndex);
+
+        // อัปเดตหัวข้อตามวันที่เลือก
+        const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+        let formattedDateStr = targetDate.toLocaleDateString('th-TH', dateOptions);
+        let titleLabel = "วันนี้ (" + formattedDateStr + ")";
+        if (filterIndex === 1) titleLabel = "วานนี้ (" + formattedDateStr + ")";
+        if (filterIndex === 2) titleLabel = "ย้อนหลัง 2 วัน (" + formattedDateStr + ")";
+        
+        document.getElementById('chartMainTitle').innerText = "📊 ยอดบัญชีรายวัน: " + titleLabel;
+
         const ctx = document.getElementById('stockChart').getContext('2d'); 
         if (chartInstance) chartInstance.destroy(); 
         
-        const catData = { 'Customs': 0, 'Core Parts': 0, 'Service': 0 }; 
-        itemsData.forEach(i => { if(catData[i.category] !== undefined) catData[i.category] += (i.price * i.stock); });
-        
-        chartInstance = new Chart(ctx, { 
-            type: 'bar', 
-            data: { 
-                labels: Object.keys(catData), 
-                datasets: [{ 
-                    label: 'มูลค่าคลังสินค้า (USD)', 
-                    data: Object.values(catData), 
-                    backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)'], 
-                    borderColor: ['#D4AF37', '#36A2EB', '#FF6384'], 
-                    borderWidth: 1 
-                }] 
-            }, 
-            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { labels: { color: '#fff' } } } } 
-        });
+        let totalIncome = 0;
+        let totalExpense = 0;
 
-        // 2. คำนวณยอดเบิกแยกตามช่าง
-        let mechanicTotals = {};
         logsData.forEach(log => {
-            // นับเฉพาะยอดเบิกออก (ไม่นับยอดเติมเข้า)
-            if (log.type !== "🟢 เติมเข้า" && !log.order.includes("[เติมเข้า]")) {
-                let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace('_', ' ');
+            let logDate = parseDateString(log.time);
+            logDate.setHours(0,0,0,0);
+
+            // แมตช์เฉพาะวันที่เลือกแบบ 100% เป๊ะๆ แยกวันกันชัดเจน
+            if (logDate.getTime() === targetDate.getTime()) {
                 let amount = Number(log.total) || 0;
-                
-                if (!mechanicTotals[mechName]) {
-                    mechanicTotals[mechName] = 0;
+                if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
+                    totalExpense += amount;
+                } else {
+                    totalIncome += amount;
                 }
-                mechanicTotals[mechName] += amount;
             }
         });
 
-        // 3. นำยอดไปแสดงใน HTML
-        const statsContainer = document.getElementById('mechanicStatsContainer');
-        statsContainer.innerHTML = ''; // ล้างค่าเก่า
-
-        const mechKeys = Object.keys(mechanicTotals);
-        if (mechKeys.length === 0) {
-            statsContainer.innerHTML = `<p style="color:#888; grid-column: 1 / -1; text-align:center;">ยังไม่มีข้อมูลการเบิกของช่างในช่วงนี้</p>`;
-            return;
-        }
-
-        // เรียงลำดับจากยอดเยอะไปน้อย
-        mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
-
-        mechKeys.forEach(name => {
-            let totalAmt = mechanicTotals[name];
-            statsContainer.innerHTML += `
-                <div class="mechanic-stat-card">
-                    <h4>${name}</h4>
-                    <span class="amt">$${totalAmt.toLocaleString()}</span>
-                </div>
-            `;
+        chartInstance = new Chart(ctx, { 
+            type: 'bar', 
+            data: { 
+                labels: ['รายรับ (Income)', 'รายจ่าย (Expense)'], 
+                datasets: [{ 
+                    label: 'ยอดเงิน (USD)', 
+                    data: [totalIncome, totalExpense], 
+                    backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(255, 77, 77, 0.7)'], 
+                    borderColor: ['#D4AF37', '#ff4d4d'], 
+                    borderWidth: 1 
+                }] 
+            }, 
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true, ticks: { color: '#fff' } }, 
+                    x: { ticks: { color: '#fff' } } 
+                }, 
+                plugins: { legend: { display: false } } 
+            } 
         });
     }
 
