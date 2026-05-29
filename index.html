@@ -358,4 +358,24 @@
         
         Swal.fire({ title: 'กำลังพิมพ์บิล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
-            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const result = await res.json();
+            if (result.status === "success") { 
+                playSuccessSound(); 
+                Swal.fire({ html: generateInvoiceHTML(user, note), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดและเริ่มใหม่', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => window.location.reload()); 
+            } else throw new Error();
+        } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
+    }
+
+    function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
+
+    function renderChart() {
+        if (!itemsData.length) return; const ctx = document.getElementById('stockChart').getContext('2d'); if (chartInstance) chartInstance.destroy(); 
+        const catData = { 'Customs': 0, 'Core Parts': 0, 'Service': 0 }; itemsData.forEach(i => { if(catData[i.category] !== undefined) catData[i.category] += (i.price * i.stock); });
+        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(catData), datasets: [{ label: 'มูลค่าคลังสินค้า (USD)', data: Object.values(catData), backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)'], borderColor: ['#D4AF37', '#36A2EB', '#FF6384'], borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
+    }
+
+    window.onload = fetchStock;
+</script>
+</body>
+</html>
