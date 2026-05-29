@@ -9,7 +9,7 @@
 
     <style>
         :root {
-            --bg-body: #0a0a0a;
+            --bg-body: #080808; /* ปรับให้เข้มขึ้นนิดนึงเพื่อรับกับตาราง */
             --bg-panel: #141414;
             --bg-input: #1f1f1f;
             --gold-main: #D4AF37;
@@ -19,17 +19,41 @@
             --text-muted: #888888;
             --border-color: #2a2a2a;
             --danger: #b30000;
+            --warning: #ff9900;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-light); padding: 30px; display: flex; justify-content: center; }
-        .layout-wrapper { display: flex; gap: 30px; max-width: 1300px; width: 100%; align-items: flex-start; }
+        
+        /* 🎨 เปลี่ยนพื้นหลังเป็นลายตารางอู่รถพรีเมียม */
+        body { 
+            background-color: var(--bg-body); 
+            background-image: 
+                linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px; /* ขนาดของช่องตาราง */
+            color: var(--text-light); 
+            padding: 30px; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+
+        /* เพิ่มแสงสะท้อนเบาๆ ให้ฉากหลัง */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%; left: -10%; width: 120%; height: 120%;
+            background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .layout-wrapper { display: flex; gap: 30px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
         .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
         
-        /* ปลดล็อคความสูงของ Sidebar ให้ยืดได้ตามสบาย */
-        .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; }
+        .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); }
         
-        .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+        .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
         .tabs { display: flex; gap: 10px; }
         .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
         .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
@@ -39,18 +63,26 @@
         .search-box input:focus { border-color: var(--gold-main); }
         
         .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding-right: 5px;}
-        .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; }
+        .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
-        .item-image { height: 140px; background-color: #000; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
+        .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
         .item-image img { width: 100%; height: 100%; object-fit: cover; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
-        .stock { color: var(--text-muted); font-size: 13px; }
+        .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        
+        /* ⚠️ เอฟเฟกต์ไฟกระพริบตอนของใกล้หมด */
+        .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
+        @keyframes pulseAlert {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
         
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
-        .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px #050505, -3px -3px 6px #232323;}
+        .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
         .btn-add:hover { background: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
         .btn-add:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
         .btn-out { background-color: var(--danger); color: #fff; opacity: 0.5; cursor: not-allowed; }
@@ -59,13 +91,12 @@
         .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); }
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
         .sidebar label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-light); flex-shrink: 0; }
-        .sidebar select, .sidebar textarea { width: 100%; padding: 12px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; }
+        .sidebar select, .sidebar textarea { width: 100%; padding: 12px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; }
         .sidebar select:focus, .sidebar textarea:focus { border-color: var(--gold-main); }
         
-        /* 🛒 กล่องตะกร้าที่ยืดได้อิสระ ไม่ต้องเลื่อน */
-        .sidebar-cart-list { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
+        .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         
-        .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
+        .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #2a2a2a; }
         .sidebar-cart-item:last-child { border-bottom: none; }
         .sidebar-cart-item-info h5 { font-size: 13px; margin-bottom: 4px; color: #fff; }
         .sidebar-cart-item-info span { color: var(--gold-main); font-size: 12px; font-weight: bold; }
@@ -75,7 +106,7 @@
         .sidebar-qty-btn:hover { border-color: var(--gold-main); color: var(--gold-main); }
         .qty-num { font-size: 13px; font-weight: bold; width: 18px; text-align: center; }
 
-        .total-box { background-color: #000; padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; }
+        .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; }
         .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
         .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
         .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
@@ -90,6 +121,7 @@
 <body>
 
 <div class="layout-wrapper">
+    <!-- แผงรายการสินค้าฝั่งซ้าย -->
     <div class="main-content">
         <div class="header-controls">
             <div class="tabs" id="tab-container">
@@ -104,6 +136,7 @@
         <div class="item-grid" id="item-grid-container"></div>
     </div>
 
+    <!-- แผงควบคุมและตะกร้าฝั่งขวา -->
     <div class="sidebar">
         <div class="brand">
             <h1>TCN Garage</h1>
@@ -118,6 +151,7 @@
         </select>
 
         <label>รายการที่เลือก:</label>
+        <!-- กล่องแสดงรายการตะกร้า -->
         <div class="sidebar-cart-list" id="sidebarCartList">
             <div style="text-align:center; color:var(--text-muted); font-size: 13px; padding-top: 20px; padding-bottom: 20px;">
                 ยังไม่มีอุปกรณ์ในตะกร้า
@@ -183,6 +217,17 @@
 
         filteredItems.forEach(item => {
             let buttonHTML = '';
+            let stockLabelHTML = '';
+
+            // ⚠️ เช็คเงื่อนไขของใกล้หมด (เหลือน้อยกว่าหรือเท่ากับ 5 ชิ้น)
+            if (item.stock > 5) {
+                stockLabelHTML = `<span class="stock">เหลือ ${item.stock}</span>`;
+            } else if (item.stock > 0 && item.stock <= 5) {
+                stockLabelHTML = `<span class="stock stock-low">⚠️ ใกล้หมด (${item.stock})</span>`;
+            } else {
+                stockLabelHTML = `<span class="stock" style="color: var(--danger);">หมด!</span>`;
+            }
+
             if (item.stock > 0) {
                 let countInCart = cart[item.name] ? ` (${cart[item.name]})` : '';
                 buttonHTML = `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${countInCart}</button>`;
@@ -200,7 +245,7 @@
                         <h4>${item.name}</h4>
                         <div class="price-stock">
                             <span class="price">$${item.price.toLocaleString()}</span>
-                            <span class="stock">เหลือ ${item.stock}</span>
+                            ${stockLabelHTML}
                         </div>
                         ${buttonHTML}
                     </div>
