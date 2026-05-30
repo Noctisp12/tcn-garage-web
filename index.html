@@ -151,7 +151,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.3 (Team Fund Fix)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.4 (Team Fund Calculation Fix)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -194,6 +194,7 @@
         </div>
     </div>
 
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
@@ -226,6 +227,7 @@
     </div>
 </div>
 
+<!-- 📊 Dashboard Modal: สำหรับ อู่ -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -257,6 +259,7 @@
     </div>
 </div>
 
+<!-- 💎 Team Fund Modal -->
 <div class="app-modal" id="teamModal">
     <div class="modal-content" style="width: 550px;">
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
@@ -359,8 +362,9 @@
         
         teamLogs.forEach(log => {
             let amt = Number(log.total) || 0;
-            if (log.type.includes("ฝากทีม")) { teamIn += amt; } 
-            else if (log.type.includes("เบิกทีม")) { teamOut += amt; }
+            // 🔥 แก้บั๊กตรงนี้: เปลี่ยนคำค้นหาให้ครอบคลุมและตรงกับที่ส่งมาจากฐานข้อมูล
+            if (log.type.includes("ฝาก")) { teamIn += amt; } 
+            else if (log.type.includes("เบิก")) { teamOut += amt; }
         });
 
         let balance = teamIn - teamOut;
@@ -551,7 +555,6 @@
         let noteInput = document.getElementById('teamNoteInput').value;
         let amt = Number(amtInput);
 
-        // ดึงยอดเงินคงเหลือจากหน้าเว็บมาเช็ค
         let currentBalStr = document.getElementById('teamBalanceAmount').innerText.replace(/,/g, '');
         let currentBal = Number(currentBalStr);
 
@@ -559,7 +562,6 @@
             playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
         }
 
-        // 🔥 เช็คกันเบิกเกินตรงนี้ 🔥
         if (actionType === 'out' && amt > currentBal) {
             playErrorSound(); 
             return Swal.fire({
