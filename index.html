@@ -45,7 +45,6 @@
 
         div.swal2-container { z-index: 9999 !important; }
 
-        /* 📱 Tablet Status Bar */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
         .status-bar .left { display: flex; gap: 15px; }
         .status-bar .right { display: flex; gap: 10px; align-items: center; }
@@ -78,9 +77,7 @@
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
-        
         .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
-        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
@@ -113,7 +110,6 @@
         .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
         .btn-submit:hover { background-color: var(--gold-hover); box-shadow: 0 0 15px var(--gold-glow); transform: translateY(-2px); }
 
-        /* 📜 History Table */
         .history-container { display: none; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; animation: fadeIn 0.4s ease-out; backdrop-filter: blur(5px); }
         .history-container h2 { color: var(--gold-main); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -121,13 +117,11 @@
         .history-table th { color: var(--gold-main); background: rgba(0,0,0,0.5); font-weight: bold; white-space: nowrap; }
         .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
         .history-table td.total-col { font-weight: bold; }
-        
         .history-table td:nth-child(1), .history-table td:nth-child(2), .history-table td:nth-child(3), .history-table td:nth-child(5) { white-space: nowrap; }
 
         .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; display: inline-block; white-space: nowrap; }
         .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--danger); font-size: 12px; display: inline-block; white-space: nowrap; }
 
-        /* 📊 Modals */
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
         .app-modal.active { visibility: visible; opacity: 1; }
         .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 95%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
@@ -147,7 +141,6 @@
         .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; transition: 0.3s; border-left: 3px solid var(--gold-main); }
         .mechanic-stat-card:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); transform: translateY(-2px); }
 
-        /* Scrollbar สำหรับตารางทีม */
         .team-history-scroll::-webkit-scrollbar { width: 6px; }
         .team-history-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
@@ -159,13 +152,14 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.9 (PIN Before Team)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.0 (Left-Right Layout & Secure Team)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
 <div class="layout-wrapper" id="main-layout">
     <div class="main-content">
         <div class="header-controls">
+            <!-- กลุ่มเมนูอู่ -->
             <div class="tabs" id="tab-container">
                 <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
                 <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
@@ -175,6 +169,7 @@
                 <button class="tab-btn" onclick="addCentralFund()" style="border-color: var(--success); color: var(--success);">💰 เพิ่มงบอู่</button>
             </div>
 
+            <!-- 💎 แยกปุ่มจัดการกองกลางทีมออกมาต่างหาก -->
             <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 จัดการกองกลางทีม</button>
             
             <div class="search-box" id="searchBox" style="margin-left: 10px;">
@@ -202,6 +197,7 @@
         </div>
     </div>
 
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
@@ -234,6 +230,7 @@
     </div>
 </div>
 
+<!-- 📊 Dashboard Modal: สำหรับ อู่ (ไม่เกี่ยวอะไรกับทีม) -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -269,6 +266,7 @@
     </div>
 </div>
 
+<!-- 💎 Team Fund Modal: แยกเฉพาะสำหรับทีม -->
 <div class="app-modal" id="teamModal">
     <div class="modal-content" style="width: 550px;">
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
@@ -337,7 +335,6 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 populateTimeFilter(); 
                 renderItems(currentCategory); 
-                updateTeamFundBalance(); // อัปเดตเงินในหน้าต่างทีมเบื้องหลัง
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 Swal.close();
             } else throw new Error(result.message || "Unknown Error"); 
@@ -362,7 +359,7 @@
         });
     }
 
-    /* 💎 อัปเดตยอดทีม */
+    /* 💎 อัปเดตยอดทีมเมื่อเรียกใช้งานหน้าต่างทีม (ทำหลังจากยืนยันรหัสผ่านแล้วเท่านั้น) */
     function updateTeamFundBalance() {
         let teamIn = 0; let teamOut = 0;
         const teamTbody = document.getElementById('team-history-body');
@@ -451,7 +448,6 @@
         updateUI();
     }
 
-    /* 🔥 โชว์เฉพาะประวัติอู่ ไม่ให้ทีมมาปน */
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         let garageLogs = logsData.filter(log => !log.type.includes("ทีม") && !log.order.includes("ทีม"));
@@ -542,7 +538,7 @@
         }
     }
 
-    /* 💎 ถามรหัสก่อนเข้าเปิดหน้าต่างทีม */
+    /* 💎 ถามรหัสก่อนเปิดหน้าต่างทีมอย่างเด็ดขาด */
     async function openTeamModal() {
         playTabSound();
         const { value: pin } = await Swal.fire({
@@ -557,11 +553,11 @@
             return;
         }
 
+        // ถ้ารหัสถูก ถึงจะโหลดข้อมูลและเปิดหน้าต่างให้ดูครับ
         updateTeamFundBalance();
         toggleApp('teamModal');
     }
 
-    /* 💎 ไม่ต้องถามรหัสซ้ำแล้ว (เพราะเข้า Modal มาได้แปลว่าถูกแล้ว) */
     async function handleTeamFund(actionType) {
         let amtInput = document.getElementById('teamAmountInput').value;
         let noteInput = document.getElementById('teamNoteInput').value;
@@ -695,7 +691,7 @@
                 let amount = Number(log.total) || 0;
                 
                 if (log.order.includes("ทีม") || log.type.includes("ทีม")) {
-                    return; // ❌ ข้ามบิลทีม 100% ไม่เกี่ยวอู่
+                    return; // ข้ามบิลทีม 100%
                 }
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
