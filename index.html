@@ -58,11 +58,11 @@
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
         
         .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
-        .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
         .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
         .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
         
-        .search-box { flex: 1; max-width: 300px; }
+        .search-box { max-width: 250px; }
         .search-box input { width: 100%; padding: 12px 15px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; transition: 0.3s; }
         .search-box input:focus { border-color: var(--gold-main); }
         
@@ -125,7 +125,7 @@
         .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; display: inline-block; white-space: nowrap; }
         .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--danger); font-size: 12px; display: inline-block; white-space: nowrap; }
 
-        /* 📊 Dashboard Modal */
+        /* 📊 Modals */
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
         .app-modal.active { visibility: visible; opacity: 1; }
         .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 95%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
@@ -153,23 +153,27 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.5 (Team Fund Update)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.6 (Split Team Fund)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
 <div class="layout-wrapper" id="main-layout">
     <div class="main-content">
         <div class="header-controls">
+            <!-- กลุ่มเมนูอู่ -->
             <div class="tabs" id="tab-container">
                 <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
                 <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
                 <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติ</button>
                 <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
-                <button class="tab-btn" onclick="addCentralFund()" style="border-color: var(--success); color: var(--success);">💰 เพิ่มงบกองกลาง</button>
-                <button class="tab-btn" onclick="addTeamFund()" style="border-color: var(--cyan); color: var(--cyan);">💎 กองกลางทีม</button>
+                <button class="tab-btn" onclick="addCentralFund()" style="border-color: var(--success); color: var(--success);">💰 เพิ่มงบอู่</button>
             </div>
-            <div class="search-box" id="searchBox">
+
+            <!-- 💎 แยกปุ่มจัดการกองกลางทีมออกมาต่างหาก -->
+            <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 กองกลางทีม</button>
+            
+            <div class="search-box" id="searchBox" style="margin-left: 10px;">
                 <input type="text" placeholder="ค้นหาชิ้นส่วน..." onkeyup="searchItems(this.value)">
             </div>
         </div>
@@ -227,10 +231,11 @@
     </div>
 </div>
 
+<!-- 📊 Dashboard Modal: สำหรับ อู่ (เอาการ์ดเดิมกลับมา) -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
-        <h2 id="chartMainTitle" style="color: var(--gold-main); margin-bottom: 15px; text-align: center;">📊 สรุปยอดบัญชีรายวัน</h2>
+        <h2 id="chartMainTitle" style="color: var(--gold-main); margin-bottom: 15px; text-align: center;">📊 สรุปยอดบัญชีอู่รายวัน</h2>
         
         <div class="filter-container">
             <select id="timeFilter" class="filter-select" onchange="renderChart()"></select>
@@ -241,28 +246,43 @@
                 <span>รายรับรวมทั้งหมด</span>
                 <h3 id="dashIncome" style="color: var(--gold-main);">$0</h3>
             </div>
-            <div class="exec-card" id="dashAddedBox" style="display:none;">
+            <div class="exec-card">
                 <span>เงินเพิ่มงบอู่</span>
                 <h3 id="dashAdded" style="color: var(--success);">+$0</h3>
-            </div>
-            <div class="exec-card" id="dashTeamBox" style="display:none;">
-                <span>💎 กองกลางทีม</span>
-                <h3 id="dashTeam" style="color: var(--cyan);">+$0</h3>
             </div>
             <div class="exec-card">
                 <span>รายจ่าย (ทุนเติมของ)</span>
                 <h3 id="dashExpense" style="color: var(--danger);">-$0</h3>
             </div>
             <div class="exec-card" style="border-color: #555;">
-                <span title="ส่วนแบ่งกองกลาง 70% + เพิ่มงบ - รายจ่าย">กำไรสุทธิเข้าอู่</span>
+                <span title="ส่วนแบ่งกองกลาง 70% + เพิ่มงบอู่ - รายจ่ายอู่">กำไรสุทธิเข้าอู่</span>
                 <h3 id="dashProfit">$0</h3>
             </div>
         </div>
 
-        <canvas id="stockChart" height="80"></canvas>
+        <canvas id="stockChart" height="90"></canvas>
 
         <h3 style="color:#fff; margin-top:25px; font-weight:normal; border-bottom:1px dashed #333; padding-bottom:10px; font-size: 16px;">🏆 ยอดเบิกรวมของช่าง (เฉพาะวันที่เลือก)</h3>
         <div id="mechanicStatsContainer" class="mechanic-stats"></div>
+    </div>
+</div>
+
+<!-- 💎 Team Fund Modal: แยกเฉพาะสำหรับทีม -->
+<div class="app-modal" id="teamModal">
+    <div class="modal-content" style="width: 500px;">
+        <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
+        <h2 style="color: var(--cyan); text-align: center; margin-bottom: 10px;">💎 ระบบกองกลางทีม</h2>
+        <p style="text-align: center; color: #888; font-size: 13px; margin-bottom: 20px;">แยกบัญชีจากอู่เด็ดขาด สำหรับใช้เป็นสวัสดิการของทีม</p>
+        
+        <div class="total-box" style="border-color: var(--cyan); background: rgba(0, 206, 209, 0.05); padding: 25px;">
+            <span class="label" style="color: var(--cyan); font-size: 16px; margin-bottom: 10px;">ยอดเงินคงเหลือทีมสุทธิ</span>
+            <span class="amount" style="color: #fff; font-size: 36px;">$<span id="teamBalanceAmount">0</span></span>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button class="btn-submit" onclick="handleTeamFund('in')" style="background: var(--success); color: #000; flex: 1;">📥 ฝากเงินเข้าทีม</button>
+            <button class="btn-submit" onclick="handleTeamFund('out')" style="background: var(--danger); color: #fff; flex: 1;">📤 เบิกเงินทีมไปใช้</button>
+        </div>
     </div>
 </div>
 
@@ -298,6 +318,7 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 populateTimeFilter(); 
                 renderItems(currentCategory); 
+                updateTeamFundBalance(); // อัปเดตยอดคงเหลือทีม
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 Swal.close();
             } else throw new Error(result.message || "Unknown Error"); 
@@ -330,6 +351,21 @@
             opt.innerText = "📅 ข้อมูลวันที่: " + dateStr;
             select.appendChild(opt);
         });
+    }
+
+    /* 💎 อัปเดตตัวเลขในหน้าต่างกองกลางทีม (ดึงประวัติทั้งหมดมาหักลบ) */
+    function updateTeamFundBalance() {
+        let teamIn = 0;
+        let teamOut = 0;
+        logsData.forEach(log => {
+            if (log.type.includes("ฝากทีม") || log.type.includes("ฝากกองกลางทีม")) {
+                teamIn += Number(log.total) || 0;
+            } else if (log.type.includes("เบิกทีม") || log.type.includes("เบิกกองกลางทีม")) {
+                teamOut += Number(log.total) || 0;
+            }
+        });
+        let balance = teamIn - teamOut;
+        document.getElementById('teamBalanceAmount').innerText = balance.toLocaleString();
     }
 
     function getDisplayStock(itemName) {
@@ -403,14 +439,17 @@
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`;
                 totalColor = `color: var(--danger);`; 
             } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
-                statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบ</span>`;
+                statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`;
                 totalColor = `color: var(--success);`; 
-            } else if (log.type === "💎 กองกลางทีม" || log.order.includes("[กองกลางทีม]")) {
-                statusBadge = `<span class="badge-restock" style="border-color:var(--cyan); color:var(--cyan); background:rgba(0, 206, 209, 0.1);">💎 กองกลางทีม</span>`;
+            } else if (log.type.includes("ฝากทีม") || log.order.includes("[ฝากทีม]")) {
+                statusBadge = `<span class="badge-restock" style="border-color:var(--cyan); color:var(--cyan); background:rgba(0, 206, 209, 0.1);">📥 ฝากทีม</span>`;
                 totalColor = `color: var(--cyan);`; 
+            } else if (log.type.includes("เบิกทีม") || log.order.includes("[เบิกทีม]")) {
+                statusBadge = `<span class="badge-withdraw" style="border-color:#FF4500; color:#FF4500; background:rgba(255, 69, 0, 0.1);">📤 เบิกใช้ทีม</span>`;
+                totalColor = `color: #FF4500;`; 
             }
 
-            let cleanOrder = log.order.replace("📦 [เติมเข้า] ", "").replace("💰 [เพิ่มงบกองกลาง] ", "").replace("💎 [กองกลางทีม] ", "");
+            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
             let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
@@ -437,13 +476,12 @@
         }
     }
 
+    /* 💰 ฟังก์ชันอู่ */
     async function addCentralFund() {
         playTabSound();
         const { value: pin } = await Swal.fire({
             title: '🔒 กรุณาใส่รหัสผ่าน (อู่)',
-            input: 'password',
-            inputPlaceholder: 'รหัส 4 หลัก',
-            background: '#141414', color: '#fff',
+            input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
             showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
             confirmButtonColor: 'var(--gold-main)', cancelButtonColor: '#333'
         });
@@ -482,14 +520,18 @@
         }
     }
 
-    /* 💎 ฟังก์ชันใหม่: เพิ่มเงินกองกลางทีม */
-    async function addTeamFund() {
+    /* 💎 ฟังก์ชันเปิดปิดหน้าต่างทีม */
+    function openTeamModal() {
+        updateTeamFundBalance();
+        toggleApp('teamModal');
+    }
+
+    /* 💎 ฟังก์ชันจัดการกองกลางทีม (แยกเบิก/ฝาก) */
+    async function handleTeamFund(actionType) {
         playTabSound();
         const { value: pin } = await Swal.fire({
-            title: '🔒 กรุณาใส่รหัสผ่าน (ทีม)',
-            input: 'password',
-            inputPlaceholder: 'รหัส 4 หลัก',
-            background: '#141414', color: '#fff',
+            title: '🔒 ยืนยันรหัสผ่านทีม',
+            input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
             showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
             confirmButtonColor: 'var(--cyan)', cancelButtonColor: '#333'
         });
@@ -499,22 +541,34 @@
             return;
         }
 
+        let isDeposit = (actionType === 'in');
+        let titleTxt = isDeposit ? '📥 ฝากเงินเข้าทีม' : '📤 เบิกเงินทีมไปใช้';
+        let btnTxt = isDeposit ? 'ยืนยันการฝาก' : 'ยืนยันการเบิก';
+        let btnColor = isDeposit ? 'var(--success)' : 'var(--danger)';
+
         const { value: formValues } = await Swal.fire({
-            title: '💎 เพิ่มเงินกองกลางทีม',
+            title: titleTxt,
             html:
-                '<input id="swal-input1" class="swal2-input" type="number" placeholder="ระบุจำนวนเงินกองกลางทีม ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
-                '<input id="swal-input2" class="swal2-input" placeholder="หมายเหตุ (เช่น ค่าขนม/สังสรรค์)" style="background:#1f1f1f; color:#fff; border-color:#333;">',
+                `<input id="swal-team-amt" class="swal2-input" type="number" placeholder="ระบุจำนวนเงิน ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">` +
+                `<input id="swal-team-note" class="swal2-input" placeholder="หมายเหตุ (ต้องระบุ)" style="background:#1f1f1f; color:#fff; border-color:#333;">`,
             focusConfirm: false, background: '#141414', color: '#fff',
-            showCancelButton: true, confirmButtonText: 'ยืนยันกองกลางทีม', cancelButtonText: 'ยกเลิก', confirmButtonColor: 'var(--cyan)',
-            preConfirm: () => { return [document.getElementById('swal-input1').value, document.getElementById('swal-input2').value] }
+            showCancelButton: true, confirmButtonText: btnTxt, cancelButtonText: 'ยกเลิก', confirmButtonColor: btnColor,
+            preConfirm: () => { return [document.getElementById('swal-team-amt').value, document.getElementById('swal-team-note').value] }
         });
 
         if (formValues) {
             let amt = Number(formValues[0]);
-            let note = formValues[1] || 'สมทบทุนกองกลางทีม';
+            let note = formValues[1] || (isDeposit ? 'สมทบทุนทีม' : 'นำไปใช้จ่ายสวัสดิการ');
             if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
 
-            let payload = { name: "TEAM", order: "💎 [กองกลางทีม]", note: note, total: amt, cart: {}, action: "add_team_fund" };
+            let payload = { 
+                name: "TEAM", 
+                order: isDeposit ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]", 
+                note: note, 
+                total: amt, 
+                cart: {}, 
+                action: isDeposit ? "add_team_fund" : "withdraw_team_fund" 
+            };
 
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
             try { 
@@ -522,7 +576,7 @@
                 const result = await res.json();
                 if (result.status === "success") { 
                     playSuccessSound(); 
-                    Swal.fire({ icon: 'success', title: 'เพิ่มกองกลางทีมสำเร็จ!', text: `เงินเข้าทีม $${amt.toLocaleString()}`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
                 } else throw new Error(result.message);
             } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
         }
@@ -541,7 +595,9 @@
     function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
 
     function changeTab(cat, el) { 
-        currentCategory = cat; document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active')); el.classList.add('active'); playTabSound(); 
+        currentCategory = cat; document.querySelectorAll('#tab-container .tab-btn').forEach(t => t.classList.remove('active')); 
+        if(el.parentElement.id === 'tab-container') el.classList.add('active'); 
+        playTabSound(); 
         if (cat === 'History') { isAdminMode = false; clearCart(); updateSidebarUI(); } else { updateSidebarUI(); }
         document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('history-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden';
         if (cat === 'History') { document.getElementById('history-container').style.display = 'block'; renderHistory(); } else { document.getElementById('item-grid-container').style.display = 'grid'; document.getElementById('searchBox').style.visibility = 'visible'; renderItems(currentCategory, currentSearchQuery); }
@@ -605,11 +661,12 @@
         return new Date(dateStr);
     }
 
+    /* 📊 อัปเดตให้หน้าต่าง Dashboard โชว์เฉพาะเงินอู่ ล้วนๆ */
     function renderChart() {
         if (!logsData.length) return; 
         
         let filterValue = document.getElementById('timeFilter').value; 
-        document.getElementById('chartMainTitle').innerText = "📊 ยอดบัญชีรายวัน: " + filterValue;
+        document.getElementById('chartMainTitle').innerText = "📊 สรุปยอดบัญชีอู่รายวัน: " + filterValue;
 
         const ctx = document.getElementById('stockChart').getContext('2d'); 
         if (chartInstance) chartInstance.destroy(); 
@@ -617,7 +674,6 @@
         let totalIncome = 0;
         let totalExpense = 0;
         let totalAddedBudget = 0;
-        let totalTeamFund = 0;
         let mechanicTotals = {};
 
         logsData.forEach(log => {
@@ -631,8 +687,8 @@
                     totalExpense += amount;
                 } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
-                } else if (log.type === "💎 กองกลางทีม" || log.order.includes("[กองกลางทีม]")) {
-                    totalTeamFund += amount; // บวกเข้ากองกลางทีมแยกต่างหาก
+                } else if (log.type.includes("ฝากทีม") || log.type.includes("เบิกทีม")) {
+                    // ❌ ข้ามบิลของทีม ไม่เอามานับในนี้เลย!
                 } else {
                     totalIncome += amount;
                     let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace('_', ' ');
@@ -642,26 +698,13 @@
             }
         });
 
-        // กำไรอู่ = (เงินอู่ 70%) + (เพิ่มงบอู่) - (รายจ่ายอู่) **ไม่รวมกองกลางทีม**
+        // กำไรสุทธิอู่ = ส่วนของอู่ (70%) + เงินเพิ่มงบอู่ - ทุนเติมของ
         let netProfit = (totalIncome * 0.70) + totalAddedBudget - totalExpense;
         
         document.getElementById('dashIncome').innerText = "$" + totalIncome.toLocaleString();
         document.getElementById('dashExpense').innerText = "-$" + totalExpense.toLocaleString();
         
-        if (totalAddedBudget > 0) {
-            document.getElementById('dashAddedBox').style.display = "block";
-            document.getElementById('dashAdded').innerText = "+$" + totalAddedBudget.toLocaleString();
-        } else {
-            document.getElementById('dashAddedBox').style.display = "none";
-        }
-
-        // โชว์/ซ่อน การ์ดกองกลางทีม
-        if (totalTeamFund > 0) {
-            document.getElementById('dashTeamBox').style.display = "block";
-            document.getElementById('dashTeam').innerText = "+$" + totalTeamFund.toLocaleString();
-        } else {
-            document.getElementById('dashTeamBox').style.display = "none";
-        }
+        document.getElementById('dashAdded').innerText = "+$" + totalAddedBudget.toLocaleString();
         
         let profitEl = document.getElementById('dashProfit');
         if (netProfit > 0) {
