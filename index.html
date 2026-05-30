@@ -43,6 +43,9 @@
             z-index: -1; pointer-events: none;
         }
 
+        /* แก้บั๊ก Popup ซ้อนทับกัน */
+        div.swal2-container { z-index: 9999 !important; }
+
         /* 📱 Tablet Status Bar */
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
         .status-bar .left { display: flex; gap: 15px; }
@@ -153,7 +156,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.6 (Split Team Fund)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.7 (Team Fund Fix)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -231,7 +234,7 @@
     </div>
 </div>
 
-<!-- 📊 Dashboard Modal: สำหรับ อู่ (เอาการ์ดเดิมกลับมา) -->
+<!-- 📊 Dashboard Modal: สำหรับ อู่ -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -267,7 +270,7 @@
     </div>
 </div>
 
-<!-- 💎 Team Fund Modal: แยกเฉพาะสำหรับทีม -->
+<!-- 💎 Team Fund Modal: แบบใส่ช่อง Input มาให้เลยเพื่อกันค้าง -->
 <div class="app-modal" id="teamModal">
     <div class="modal-content" style="width: 500px;">
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
@@ -279,9 +282,17 @@
             <span class="amount" style="color: #fff; font-size: 36px;">$<span id="teamBalanceAmount">0</span></span>
         </div>
 
-        <div style="display: flex; gap: 15px; margin-top: 20px;">
-            <button class="btn-submit" onclick="handleTeamFund('in')" style="background: var(--success); color: #000; flex: 1;">📥 ฝากเงินเข้าทีม</button>
-            <button class="btn-submit" onclick="handleTeamFund('out')" style="background: var(--danger); color: #fff; flex: 1;">📤 เบิกเงินทีมไปใช้</button>
+        <div style="margin-top: 20px; text-align: left;">
+            <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light);">จำนวนเงิน ($):</label>
+            <input type="number" id="teamAmountInput" placeholder="ระบุจำนวนเงิน..." style="width: 100%; padding: 12px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; font-size: 14px;">
+
+            <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light);">หมายเหตุ (Note):</label>
+            <textarea id="teamNoteInput" rows="2" placeholder="ระบุรายละเอียด (เช่น ค่าข้าว, เลี้ยงน้ำ)..." style="width: 100%; padding: 12px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; font-size: 14px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <button class="btn-submit" onclick="handleTeamFund('in')" style="background: var(--success); color: #000; flex: 1;">📥 ฝากเข้าทีม</button>
+            <button class="btn-submit" onclick="handleTeamFund('out')" style="background: var(--danger); color: #fff; flex: 1;">📤 เบิกเงินไปใช้</button>
         </div>
     </div>
 </div>
@@ -318,7 +329,7 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 populateTimeFilter(); 
                 renderItems(currentCategory); 
-                updateTeamFundBalance(); // อัปเดตยอดคงเหลือทีม
+                updateTeamFundBalance(); 
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 Swal.close();
             } else throw new Error(result.message || "Unknown Error"); 
@@ -353,7 +364,6 @@
         });
     }
 
-    /* 💎 อัปเดตตัวเลขในหน้าต่างกองกลางทีม (ดึงประวัติทั้งหมดมาหักลบ) */
     function updateTeamFundBalance() {
         let teamIn = 0;
         let teamOut = 0;
@@ -476,7 +486,6 @@
         }
     }
 
-    /* 💰 ฟังก์ชันอู่ */
     async function addCentralFund() {
         playTabSound();
         const { value: pin } = await Swal.fire({
@@ -520,14 +529,23 @@
         }
     }
 
-    /* 💎 ฟังก์ชันเปิดปิดหน้าต่างทีม */
+    /* 💎 เปิดปิดหน้าต่างทีม */
     function openTeamModal() {
         updateTeamFundBalance();
         toggleApp('teamModal');
     }
 
-    /* 💎 ฟังก์ชันจัดการกองกลางทีม (แยกเบิก/ฝาก) */
+    /* 💎 ฟังก์ชันจัดการทีมที่ปรับใหม่ไม่ให้ค้าง */
     async function handleTeamFund(actionType) {
+        let amtInput = document.getElementById('teamAmountInput').value;
+        let noteInput = document.getElementById('teamNoteInput').value;
+        let amt = Number(amtInput);
+
+        if (amt <= 0) {
+            playErrorSound();
+            return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
+        }
+
         playTabSound();
         const { value: pin } = await Swal.fire({
             title: '🔒 ยืนยันรหัสผ่านทีม',
@@ -542,44 +560,31 @@
         }
 
         let isDeposit = (actionType === 'in');
-        let titleTxt = isDeposit ? '📥 ฝากเงินเข้าทีม' : '📤 เบิกเงินทีมไปใช้';
-        let btnTxt = isDeposit ? 'ยืนยันการฝาก' : 'ยืนยันการเบิก';
-        let btnColor = isDeposit ? 'var(--success)' : 'var(--danger)';
+        let note = noteInput || (isDeposit ? 'สมทบทุนทีม' : 'นำไปใช้จ่ายสวัสดิการ');
 
-        const { value: formValues } = await Swal.fire({
-            title: titleTxt,
-            html:
-                `<input id="swal-team-amt" class="swal2-input" type="number" placeholder="ระบุจำนวนเงิน ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">` +
-                `<input id="swal-team-note" class="swal2-input" placeholder="หมายเหตุ (ต้องระบุ)" style="background:#1f1f1f; color:#fff; border-color:#333;">`,
-            focusConfirm: false, background: '#141414', color: '#fff',
-            showCancelButton: true, confirmButtonText: btnTxt, cancelButtonText: 'ยกเลิก', confirmButtonColor: btnColor,
-            preConfirm: () => { return [document.getElementById('swal-team-amt').value, document.getElementById('swal-team-note').value] }
-        });
+        let payload = { 
+            name: "TEAM", 
+            order: isDeposit ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]", 
+            note: note, 
+            total: amt, 
+            cart: {}, 
+            action: isDeposit ? "add_team_fund" : "withdraw_team_fund" 
+        };
 
-        if (formValues) {
-            let amt = Number(formValues[0]);
-            let note = formValues[1] || (isDeposit ? 'สมทบทุนทีม' : 'นำไปใช้จ่ายสวัสดิการ');
-            if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
+        // สั่งปิดหน้าต่างลงก่อนเพื่อกันการซ้อนทับกัน
+        document.getElementById('teamModal').classList.remove('active');
 
-            let payload = { 
-                name: "TEAM", 
-                order: isDeposit ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]", 
-                note: note, 
-                total: amt, 
-                cart: {}, 
-                action: isDeposit ? "add_team_fund" : "withdraw_team_fund" 
-            };
-
-            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
-            try { 
-                const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
-                const result = await res.json();
-                if (result.status === "success") { 
-                    playSuccessSound(); 
-                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
-                } else throw new Error(result.message);
-            } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
-        }
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        try { 
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const result = await res.json();
+            if (result.status === "success") { 
+                playSuccessSound(); 
+                document.getElementById('teamAmountInput').value = ''; // เคลียร์ตัวเลขเดิมทิ้ง
+                document.getElementById('teamNoteInput').value = ''; 
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+            } else throw new Error(result.message);
+        } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
     }
 
     function updateSidebarUI() {
@@ -661,7 +666,6 @@
         return new Date(dateStr);
     }
 
-    /* 📊 อัปเดตให้หน้าต่าง Dashboard โชว์เฉพาะเงินอู่ ล้วนๆ */
     function renderChart() {
         if (!logsData.length) return; 
         
@@ -688,7 +692,7 @@
                 } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
                 } else if (log.type.includes("ฝากทีม") || log.type.includes("เบิกทีม")) {
-                    // ❌ ข้ามบิลของทีม ไม่เอามานับในนี้เลย!
+                    // ❌ ข้าม
                 } else {
                     totalIncome += amount;
                     let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace('_', ' ');
@@ -698,7 +702,6 @@
             }
         });
 
-        // กำไรสุทธิอู่ = ส่วนของอู่ (70%) + เงินเพิ่มงบอู่ - ทุนเติมของ
         let netProfit = (totalIncome * 0.70) + totalAddedBudget - totalExpense;
         
         document.getElementById('dashIncome').innerText = "$" + totalIncome.toLocaleString();
