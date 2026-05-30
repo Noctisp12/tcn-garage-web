@@ -138,7 +138,6 @@
         .exec-card span { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
         .exec-card h3 { font-size: 24px; font-weight: bold; margin: 0; }
 
-        /* 🏆 Leaderboard CSS */
         .mechanic-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
         .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; transition: 0.3s; border-left: 3px solid var(--gold-main); }
         .mechanic-stat-card:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); transform: translateY(-2px); }
@@ -151,7 +150,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.2 (Fix Bill $0 & Add Mech Cut)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.3</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -270,7 +269,7 @@
     function playTabSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.05); }
     function playAddSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
     function playRemoveSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
-    function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
+    function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = openGain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
     function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
 
     setInterval(() => {
@@ -408,7 +407,7 @@
                     <td>${dateStr}</td>
                     <td>${statusBadge}</td>
                     <td>${(log.mechanic || '').replace('_', ' ')}</td>
-                    <td style="font-size: 13px; color: #ccc;">${cleanOrder} ${noteHtml}</td>
+                    <td style="font-size: 13px; color: #ccc; white-space: pre-line;">${cleanOrder} ${noteHtml}</td>
                     <td class="total-col" style="${totalColor}">$${displayTotal.toLocaleString()}</td>
                 </tr>
             `;
@@ -528,7 +527,7 @@
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
         if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
-        for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
+        for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0; white-space: pre-line;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
         html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
 
@@ -536,11 +535,13 @@
         const userSelect = document.getElementById('userSelect'); const user = userSelect.options[userSelect.selectedIndex].value; const note = document.getElementById('noteInput').value;
         if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
+        
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
-        let finalOrder = orderArr.join(', '); let currentAction = isAdminMode ? "restock" : "withdraw";
+        // 🔥 ปรับแก้เปลี่ยนมาเชื่อมข้อความรายการด้วยตัวขึ้นบรรทัดใหม่ \n เพื่อให้อยู่ในแถวเดี่ยวและตัดคำลงมาด้านล่าง
+        let finalOrder = orderArr.join('\n'); 
+        let currentAction = isAdminMode ? "restock" : "withdraw";
         const payload = { name: user, order: finalOrder, note: note, total: total, cart: cart, action: currentAction };
         
-        // สร้าง HTML บิลเก็บไว้ก่อน
         let invoiceHtmlStr = generateInvoiceHTML(user, note, currentAction);
 
         Swal.fire({ title: 'กำลังทำรายการ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -549,17 +550,12 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                
-                // แก้บักยอดสต็อกไม่ตรง: ลบ/เพิ่ม ออกจาก Array กลาง
                 for (let name in cart) {
                     let item = itemsData.find(i => i.name === name);
                     if (item && currentAction === "restock") item.stock += cart[name]; 
                     if (item && currentAction === "withdraw") item.stock -= cart[name];
                 }
-                
                 clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
-                
-                // โชว์บิล
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
         } catch (e) { 
