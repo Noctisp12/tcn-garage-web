@@ -159,7 +159,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.8 (Separate Team System)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.9 (PIN Before Team)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -170,12 +170,11 @@
                 <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
                 <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
-                <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติ</button>
+                <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติอู่</button>
                 <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
                 <button class="tab-btn" onclick="addCentralFund()" style="border-color: var(--success); color: var(--success);">💰 เพิ่มงบอู่</button>
             </div>
 
-            <!-- 💎 ปุ่มกองกลางทีม แยกออกมาอยู่ฝั่งขวา -->
             <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 จัดการกองกลางทีม</button>
             
             <div class="search-box" id="searchBox" style="margin-left: 10px;">
@@ -203,7 +202,6 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
@@ -236,7 +234,6 @@
     </div>
 </div>
 
-<!-- 📊 Dashboard Modal: สำหรับ อู่ (เอาการ์ดเดิมกลับมา) -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -272,7 +269,6 @@
     </div>
 </div>
 
-<!-- 💎 Team Fund Modal: แยกเฉพาะสำหรับทีม พร้อมตารางประวัติในตัว -->
 <div class="app-modal" id="teamModal">
     <div class="modal-content" style="width: 550px;">
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
@@ -297,13 +293,11 @@
             <button class="btn-submit" onclick="handleTeamFund('out')" style="background: var(--danger); color: #fff; flex: 1; padding: 12px; font-size: 15px;">📤 เบิกเงินไปใช้</button>
         </div>
 
-        <!-- ประวัติย่อยเฉพาะของทีม -->
         <div style="margin-top: 25px; text-align: left;">
             <h4 style="color: #ccc; margin-bottom: 10px; font-size: 14px; border-bottom: 1px dashed #333; padding-bottom: 5px;">📜 ประวัติการเคลื่อนไหว (ทีม)</h4>
             <div class="team-history-scroll" style="max-height: 150px; overflow-y: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #aaa;">
                     <tbody id="team-history-body">
-                        <!-- โหลดข้อมูลทีมมาใส่ตรงนี้ -->
                     </tbody>
                 </table>
             </div>
@@ -343,7 +337,7 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 populateTimeFilter(); 
                 renderItems(currentCategory); 
-                updateTeamFundBalance(); // อัปเดตเงินและประวัติในหน้าต่างทีม
+                updateTeamFundBalance(); // อัปเดตเงินในหน้าต่างทีมเบื้องหลัง
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 Swal.close();
             } else throw new Error(result.message || "Unknown Error"); 
@@ -362,23 +356,19 @@
             if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
         });
 
-        if(uniqueDates.length === 0) {
-            select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return;
-        }
-
+        if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
         uniqueDates.forEach((dateStr) => {
             let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
         });
     }
 
-    /* 💎 อัปเดตยอดและประวัติทีม */
+    /* 💎 อัปเดตยอดทีม */
     function updateTeamFundBalance() {
         let teamIn = 0; let teamOut = 0;
         const teamTbody = document.getElementById('team-history-body');
         teamTbody.innerHTML = '';
         
-        // กรองเฉพาะบิลของทีม
-        let teamLogs = logsData.filter(log => log.type.includes("ทีม"));
+        let teamLogs = logsData.filter(log => log.type.includes("ทีม") || log.order.includes("ทีม"));
         
         teamLogs.forEach(log => {
             let amt = Number(log.total) || 0;
@@ -392,7 +382,6 @@
         if (teamLogs.length === 0) {
             teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
         } else {
-            // เอา 20 รายการล่าสุด
             teamLogs.slice(0, 20).forEach(log => {
                 const dateObj = new Date(log.time); 
                 const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
@@ -443,9 +432,7 @@
                 total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
             } else if (isAdminMode) { 
                 total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
-            } else { 
-                playErrorSound(); 
-            }
+            } else { playErrorSound(); }
         } 
     }
     
@@ -454,13 +441,9 @@
         let currentCartQty = cart[name] || 0;
 
         if (change > 0) { 
-            if (!isAdminMode && (item.stock - currentCartQty) > 0) { 
-                cart[name]++; total += item.price; playAddSound(); 
-            } else if (isAdminMode) { 
-                cart[name]++; total += item.price; playAddSound(); 
-            } else { 
-                playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); 
-            }
+            if (!isAdminMode && (item.stock - currentCartQty) > 0) { cart[name]++; total += item.price; playAddSound(); } 
+            else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } 
+            else { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
         }
         else if (change < 0 && currentCartQty > 0) { 
             cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playRemoveSound(); 
@@ -468,12 +451,10 @@
         updateUI();
     }
 
-    /* 🔥 ซ่อนประวัติทีมออกจากอู่ */
+    /* 🔥 โชว์เฉพาะประวัติอู่ ไม่ให้ทีมมาปน */
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
-        
-        // กรองเอาเฉพาะที่ "ไม่ใช่ของทีม" มาโชว์ในหน้านี้
-        let garageLogs = logsData.filter(log => !log.type.includes("ทีม"));
+        let garageLogs = logsData.filter(log => !log.type.includes("ทีม") && !log.order.includes("ทีม"));
 
         if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
         
@@ -486,11 +467,9 @@
             let totalColor = `color: var(--gold-main);`; 
             
             if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
-                statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`;
-                totalColor = `color: var(--danger);`; 
+                statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
             } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
-                statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`;
-                totalColor = `color: var(--success);`; 
+                statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] /g, "");
@@ -520,7 +499,6 @@
         }
     }
 
-    /* 💰 เพิ่มงบอู่ (ยังใช้ Popup ได้ปกติเพราะไม่ซ้อน) */
     async function addCentralFund() {
         playTabSound();
         const { value: pin } = await Swal.fire({
@@ -564,27 +542,13 @@
         }
     }
 
-    function openTeamModal() {
-        updateTeamFundBalance();
-        toggleApp('teamModal');
-    }
-
-    /* 💎 ฟังก์ชันจัดการทีมที่ปรับใหม่ไม่ให้ค้าง */
-    async function handleTeamFund(actionType) {
-        let amtInput = document.getElementById('teamAmountInput').value;
-        let noteInput = document.getElementById('teamNoteInput').value;
-        let amt = Number(amtInput);
-
-        if (amt <= 0) {
-            playErrorSound();
-            return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
-        }
-
+    /* 💎 ถามรหัสก่อนเข้าเปิดหน้าต่างทีม */
+    async function openTeamModal() {
         playTabSound();
         const { value: pin } = await Swal.fire({
             title: '🔒 ยืนยันรหัสผ่านทีม',
             input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
-            showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
+            showCancelButton: true, confirmButtonText: 'เข้าสู่ระบบทีม', cancelButtonText: 'ยกเลิก',
             confirmButtonColor: 'var(--cyan)', cancelButtonColor: '#333'
         });
 
@@ -593,6 +557,21 @@
             return;
         }
 
+        updateTeamFundBalance();
+        toggleApp('teamModal');
+    }
+
+    /* 💎 ไม่ต้องถามรหัสซ้ำแล้ว (เพราะเข้า Modal มาได้แปลว่าถูกแล้ว) */
+    async function handleTeamFund(actionType) {
+        let amtInput = document.getElementById('teamAmountInput').value;
+        let noteInput = document.getElementById('teamNoteInput').value;
+        let amt = Number(amtInput);
+
+        if (amt <= 0) {
+            playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
+        }
+
+        playTabSound();
         let isDeposit = (actionType === 'in');
         let note = noteInput || (isDeposit ? 'สมทบทุนทีม' : 'นำไปใช้จ่ายสวัสดิการ');
 
@@ -605,7 +584,6 @@
             action: isDeposit ? "add_team_fund" : "withdraw_team_fund" 
         };
 
-        // สั่งปิดหน้าต่างลงก่อนเพื่อกันการซ้อนทับกัน
         document.getElementById('teamModal').classList.remove('active');
 
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -685,9 +663,7 @@
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
         } catch (e) { 
-            console.error(e);
-            playErrorSound(); 
-            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message || 'เชื่อมต่อฐานข้อมูลล้มเหลว', background: '#141414', color: '#fff' }); 
+            console.error(e); playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message || 'เชื่อมต่อฐานข้อมูลล้มเหลว', background: '#141414', color: '#fff' }); 
         }
     }
 
@@ -718,12 +694,14 @@
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
                 
+                if (log.order.includes("ทีม") || log.type.includes("ทีม")) {
+                    return; // ❌ ข้ามบิลทีม 100% ไม่เกี่ยวอู่
+                }
+                
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
                 } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
-                } else if (log.type.includes("ฝากทีม") || log.type.includes("เบิกทีม")) {
-                    // ข้ามเงินทีม ไม่โชว์ในอู่
                 } else {
                     totalIncome += amount;
                     let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace('_', ' ');
