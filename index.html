@@ -152,7 +152,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.0 (Locked Edition)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v7.1 (Fixed Add Budget)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -192,6 +192,7 @@
         </div>
     </div>
 
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
@@ -239,7 +240,7 @@
                 <h3 id="dashIncome" style="color: var(--gold-main);">$0</h3>
             </div>
             <div class="exec-card" id="dashAddedBox" style="display:none;">
-                <span>เงินอัดฉีดกองกลาง</span>
+                <span>เงินเพิ่มงบกองกลาง</span>
                 <h3 id="dashAdded" style="color: var(--success);">+$0</h3>
             </div>
             <div class="exec-card">
@@ -247,7 +248,7 @@
                 <h3 id="dashExpense" style="color: var(--danger);">-$0</h3>
             </div>
             <div class="exec-card">
-                <span title="ส่วนแบ่งกองกลาง 70% + อัดฉีด - รายจ่าย">💎 กำไรสุทธิเข้าอู่</span>
+                <span title="ส่วนแบ่งกองกลาง 70% + เพิ่มงบ - รายจ่าย">💎 กำไรสุทธิเข้าอู่</span>
                 <h3 id="dashProfit">$0</h3>
             </div>
         </div>
@@ -296,8 +297,10 @@
                 renderItems(currentCategory); 
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 Swal.close();
-            } else throw new Error(); 
-        } catch (error) { Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', background: '#141414', color: '#fff' }); }
+            } else throw new Error(result.message || "Unknown Error"); 
+        } catch (error) { 
+            Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: error.message || '', background: '#141414', color: '#fff' }); 
+        }
     }
 
     function populateTimeFilter() {
@@ -326,7 +329,7 @@
         });
     }
 
-    // ⚡ ระบบ Real-time: บวก/ลบยอดแสดงผลบนหน้าจอสดๆ โดยไม่ทำลายข้อมูลหลัก
+    // ⚡ ระบบ Real-time
     function getDisplayStock(itemName) {
         let item = itemsData.find(i => i.name === itemName);
         if (!item) return 0;
@@ -434,7 +437,6 @@
     async function addCentralFund() {
         playTabSound();
         
-        // 1. ถามรหัสผ่าน (PIN)
         const { value: pin } = await Swal.fire({
             title: '🔒 กรุณาใส่รหัสผ่าน',
             input: 'password',
@@ -448,7 +450,6 @@
             cancelButtonColor: '#333'
         });
 
-        // 2. ตรวจสอบรหัส (1990)
         if (pin !== '1990') {
             if (pin) {
                 playErrorSound();
@@ -457,17 +458,16 @@
             return;
         }
 
-        // 3. ผ่านแล้วให้กรอกงบ
         const { value: formValues } = await Swal.fire({
             title: '💰 เพิ่มงบกองกลางอู่',
             html:
-                '<input id="swal-input1" class="swal2-input" type="number" placeholder="ระบุจำนวนเงินอัดฉีด ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
+                '<input id="swal-input1" class="swal2-input" type="number" placeholder="ระบุจำนวนเงินเพิ่มงบ ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
                 '<input id="swal-input2" class="swal2-input" placeholder="หมายเหตุ (เช่น ทุนเถ้าแก่)" style="background:#1f1f1f; color:#fff; border-color:#333;">',
             focusConfirm: false,
             background: '#141414',
             color: '#fff',
             showCancelButton: true,
-            confirmButtonText: 'ยืนยันอัดฉีด',
+            confirmButtonText: 'ยืนยันเพิ่มงบ',
             cancelButtonText: 'ยกเลิก',
             confirmButtonColor: 'var(--success)',
             preConfirm: () => {
@@ -477,7 +477,7 @@
 
         if (formValues) {
             let amt = Number(formValues[0]);
-            let note = formValues[1] || 'อัดฉีดงบกองกลาง';
+            let note = formValues[1] || 'เพิ่มงบกองกลาง';
             if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
 
             let payload = {
@@ -495,9 +495,13 @@
                 const result = await res.json();
                 if (result.status === "success") { 
                     playSuccessSound(); 
-                    Swal.fire({ icon: 'success', title: 'อัดฉีดงบสำเร็จ!', text: `เพิ่มงบเข้ากองกลาง $${amt.toLocaleString()} เรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
-                } else throw new Error();
-            } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
+                    Swal.fire({ icon: 'success', title: 'เพิ่มงบสำเร็จ!', text: `เพิ่มงบเข้ากองกลาง $${amt.toLocaleString()} เรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+                } else throw new Error(result.message);
+            } catch (e) { 
+                console.error(e);
+                playErrorSound(); 
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message || 'เชื่อมต่อฐานข้อมูลล้มเหลว', background: '#141414', color: '#fff' }); 
+            }
         }
     }
 
@@ -550,15 +554,19 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                
-                // ไม่ต้องใช้ location.reload แล้ว เพื่อความเร็ว!
-                clearCart(); 
-                isAdminMode = false; 
-                updateSidebarUI(); 
-                
+                for (let name in cart) {
+                    let item = itemsData.find(i => i.name === name);
+                    if (item && currentAction === "restock") item.stock += cart[name]; 
+                    if (item && currentAction === "withdraw") item.stock -= cart[name]; // หักสต็อกจริงๆในแอเรย์ด้วย
+                }
+                clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
                 Swal.fire({ html: generateInvoiceHTML(user, note, currentAction), width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
-            } else throw new Error();
-        } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', background: '#141414', color: '#fff' }); }
+            } else throw new Error(result.message);
+        } catch (e) { 
+            console.error(e);
+            playErrorSound(); 
+            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message || 'เชื่อมต่อฐานข้อมูลล้มเหลว', background: '#141414', color: '#fff' }); 
+        }
     }
 
     function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
