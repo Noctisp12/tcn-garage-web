@@ -151,7 +151,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.4 (Team Fund Calculation Fix)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.5 (Strict Filtering)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -358,11 +358,11 @@
         const teamTbody = document.getElementById('team-history-body');
         teamTbody.innerHTML = '';
         
-        let teamLogs = logsData.filter(log => log.type.includes("ทีม") || log.order.includes("ทีม"));
+        // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic === 'TEAM' จะปลอดภัยและแม่นยำ 100% ต่อให้ของชื่อทีมก็ไม่เพี้ยนครับ 🔥
+        let teamLogs = logsData.filter(log => log.mechanic === "TEAM");
         
         teamLogs.forEach(log => {
             let amt = Number(log.total) || 0;
-            // 🔥 แก้บั๊กตรงนี้: เปลี่ยนคำค้นหาให้ครอบคลุมและตรงกับที่ส่งมาจากฐานข้อมูล
             if (log.type.includes("ฝาก")) { teamIn += amt; } 
             else if (log.type.includes("เบิก")) { teamOut += amt; }
         });
@@ -444,7 +444,9 @@
 
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
-        let garageLogs = logsData.filter(log => !log.type.includes("ทีม") && !log.order.includes("ทีม"));
+        
+        // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic !== 'TEAM' ครับ
+        let garageLogs = logsData.filter(log => log.mechanic !== "TEAM");
 
         if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
         
@@ -695,7 +697,9 @@
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
-                if (log.order.includes("ทีม") || log.type.includes("ทีม")) return; 
+                
+                // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic === 'TEAM'
+                if (log.mechanic === "TEAM") return; 
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
