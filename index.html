@@ -151,7 +151,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.5 (Strict Filtering)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.6 (Breakdown Details Added)</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -254,7 +254,7 @@
 
         <canvas id="stockChart" height="90"></canvas>
 
-        <h3 style="color:#fff; margin-top:25px; font-weight:normal; border-bottom:1px dashed #333; padding-bottom:10px; font-size: 16px;">🏆 ยอดเบิกรวมของช่าง (เฉพาะวันที่เลือก)</h3>
+        <h3 style="color:#fff; margin-top:25px; font-weight:normal; border-bottom:1px dashed #333; padding-bottom:10px; font-size: 16px;">🏆 รายละเอียดที่มาของรายรับ (เฉพาะวันที่เลือก)</h3>
         <div id="mechanicStatsContainer" class="mechanic-stats"></div>
     </div>
 </div>
@@ -358,7 +358,6 @@
         const teamTbody = document.getElementById('team-history-body');
         teamTbody.innerHTML = '';
         
-        // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic === 'TEAM' จะปลอดภัยและแม่นยำ 100% ต่อให้ของชื่อทีมก็ไม่เพี้ยนครับ 🔥
         let teamLogs = logsData.filter(log => log.mechanic === "TEAM");
         
         teamLogs.forEach(log => {
@@ -444,8 +443,6 @@
 
     function renderHistory() {
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
-        
-        // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic !== 'TEAM' ครับ
         let garageLogs = logsData.filter(log => log.mechanic !== "TEAM");
 
         if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
@@ -697,8 +694,6 @@
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
-                
-                // 🔥 แก้ไขตัวคัดกรอง: ใช้คำว่า mechanic === 'TEAM'
                 if (log.mechanic === "TEAM") return; 
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
@@ -734,19 +729,38 @@
         const statsContainer = document.getElementById('mechanicStatsContainer'); statsContainer.innerHTML = ''; 
         const mechKeys = Object.keys(mechanicTotals);
 
-        if (mechKeys.length === 0) { statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; return; }
+        // 🔥 ถ้าไม่มีคนเบิกเลย ให้เช็คว่ามีการเพิ่มงบอย่างเดียวไหม
+        if (mechKeys.length === 0 && totalAddedBudget === 0) { 
+            statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; return; 
+        }
 
         mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
         mechKeys.forEach(name => {
-            let mechIncome = mechanicTotals[name]; let mechCut = mechIncome * 0.30;
+            let mechIncome = mechanicTotals[name]; 
+            let mechCut = mechIncome * 0.30;
+            let garageCut = mechIncome * 0.70; // คำนวณ 70% ออกมา
+
+            // 🔥 เพิ่มบรรทัดโชว์ "ส่วนแบ่งเข้าอู่ (70%)" ลงในการ์ดช่าง 🔥
             statsContainer.innerHTML += `
                 <div class="mechanic-stat-card">
                     <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
-                    <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่:</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
+                    <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่ (100%):</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
+                    <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (70%):</span> <span>+$${garageCut.toLocaleString()}</span></div>
                     <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (30%):</span> <span>$${mechCut.toLocaleString()}</span></div>
                 </div>
             `;
         });
+
+        // 🔥 สร้างการ์ดแสดงยอด "เพิ่มงบอู่" แยกให้เห็นชัดๆ หากมีการเติมเงินในวันนั้น 🔥
+        if (totalAddedBudget > 0) {
+            statsContainer.innerHTML += `
+                <div class="mechanic-stat-card" style="border-left-color: var(--success);">
+                    <h4 style="color:var(--success); font-size:15px; margin-bottom:10px;">💰 เพิ่มงบอู่</h4>
+                    <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>ประเภท:</span> <span style="color:#fff;">เงินทุน/เงินส่วนตัว</span></div>
+                    <div style="font-size: 14px; color: var(--success); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>สมทบเข้าอู่:</span> <span>+$${totalAddedBudget.toLocaleString()}</span></div>
+                </div>
+            `;
+        }
     }
 </script>
 </body>
