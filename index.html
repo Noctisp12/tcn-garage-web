@@ -151,7 +151,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.6 (Breakdown Details Added)</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.6</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -205,6 +205,8 @@
             <option value="" disabled selected>-- กรุณาเลือก --</option>
             <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
             <option value="Lucas_Harper">2. Lucas Harper</option>
+            <option value="Carlious_Cedric_Rutherford">3. Carlious Cedric Rutherford</option>
+            <option value="Royn_Enrico">4. Royn Enrico</option>
         </select>
 
         <div id="cartSection">
@@ -294,7 +296,6 @@
 </div>
 
 <script>
-    // ใช้ลิงก์เดิมของเถ้าแก่ได้เลยครับ ไม่ต้องไปทำอะไรฝั่ง Google Script อีกแล้ว!
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
@@ -309,7 +310,6 @@
     function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
     function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
 
-    // 🔥 ฟังก์ชันยิงเข้า Discord โดยตรงจากหน้าเว็บ (แก้ปัญหาเรื่องสิทธิ์) 🔥
     function sendDiscordWebhookToChannel(payload) {
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1511627088522776699/1Kx_lvhi_aJe-r5PiNuNsVcAn8bvSyzwzB34iPEMQkf4EZ_JL3iRqCyZGVMAdLK6pOxN";
         if (!WEBHOOK_URL) return;
@@ -339,7 +339,7 @@
             title: title,
             color: color,
             fields: [
-                { name: "👤 ผู้ทำรายการ", value: payload.name.replace('_', ' '), inline: true },
+                { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true },
                 { name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true },
                 { name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false },
                 { name: "🛠️ รายละเอียด", value: detailValue, inline: false }
@@ -348,7 +348,6 @@
             footer: { text: "TCN OS v8.6 • System Log" }
         };
 
-        // ใช้ FormData เพื่อหลบการบล็อก CORS ของเบราว์เซอร์
         let formData = new FormData();
         formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
 
@@ -513,7 +512,7 @@
                 <tr>
                     <td>${dateStr}</td>
                     <td>${statusBadge}</td>
-                    <td>${(log.mechanic || '').replace('_', ' ')}</td>
+                    <td>${(log.mechanic || '').replace(/_/g, ' ')}</td>
                     <td style="font-size: 13px; color: #ccc; white-space: pre-line; line-height: 1.5;">${cleanOrder} ${noteHtml}</td>
                     <td class="total-col" style="${totalColor}">$${displayTotal.toLocaleString()}</td>
                 </tr>
@@ -569,7 +568,7 @@
                 const result = await res.json();
                 if (result.status === "success") { 
                     playSuccessSound(); 
-                    sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
+                    sendDiscordWebhookToChannel(payload);
                     Swal.fire({ icon: 'success', title: 'เพิ่มงบอู่สำเร็จ!', text: `เพิ่มเข้ากองกลางอู่ $${amt.toLocaleString()}`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
                 } else throw new Error(result.message);
             } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
@@ -638,7 +637,7 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
+                sendDiscordWebhookToChannel(payload);
                 document.getElementById('teamAmountInput').value = ''; 
                 document.getElementById('teamNoteInput').value = ''; 
                 Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
@@ -678,7 +677,7 @@
     function generateInvoiceHTML(user, note, actionType) {
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
         if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
-        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace('_', ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p><p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0; white-space: pre-line;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
         html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
@@ -701,7 +700,7 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
-                sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
+                sendDiscordWebhookToChannel(payload);
                 for (let name in cart) {
                     let item = itemsData.find(i => i.name === name);
                     if (item && currentAction === "restock") item.stock += cart[name]; 
@@ -749,7 +748,7 @@
                     totalAddedBudget += amount;
                 } else {
                     totalIncome += amount;
-                    let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace('_', ' ');
+                    let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace(/_/g, ' ');
                     if (!mechanicTotals[mechName]) mechanicTotals[mechName] = 0;
                     mechanicTotals[mechName] += amount;
                 }
