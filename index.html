@@ -294,7 +294,7 @@
 </div>
 
 <script>
-    // 🔥 ลิงก์เดิมของเถ้าแก่ (ไม่ต้องเปลี่ยน) 🔥
+    // ใช้ลิงก์เดิมของเถ้าแก่ได้เลยครับ ไม่ต้องไปทำอะไรฝั่ง Google Script อีกแล้ว!
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
@@ -308,6 +308,52 @@
     function playRemoveSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
     function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
     function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
+
+    // 🔥 ฟังก์ชันยิงเข้า Discord โดยตรงจากหน้าเว็บ (แก้ปัญหาเรื่องสิทธิ์) 🔥
+    function sendDiscordWebhookToChannel(payload) {
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1511627088522776699/1Kx_lvhi_aJe-r5PiNuNsVcAn8bvSyzwzB34iPEMQkf4EZ_JL3iRqCyZGVMAdLK6pOxN";
+        if (!WEBHOOK_URL) return;
+        
+        let title = "🧾 [WITHDRAW] TCN GARAGE";
+        let color = 15965196; 
+        let totalAmount = Number(payload.total) || 0;
+        let mechShare = totalAmount * 0.20;
+        let garageShare = totalAmount * 0.80;
+        let block = String.fromCharCode(96, 96, 96);
+        let detailValue = block + "text\n" + payload.order + "\n" + block;
+
+        if (payload.action === "restock") {
+            title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
+        } else if (payload.action === "add_budget") {
+            title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
+        } else if (payload.action === "add_team_fund") {
+            title = "💎 [TEAM] ฝากเงินเข้ากองกลางทีม"; color = 52427;
+        } else if (payload.action === "withdraw_team_fund") {
+            title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
+        } else {
+            title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
+            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง (20%): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ (80%): $" + garageShare.toLocaleString('en-US') + "\n" + block;
+        }
+
+        let embed = {
+            title: title,
+            color: color,
+            fields: [
+                { name: "👤 ผู้ทำรายการ", value: payload.name.replace('_', ' '), inline: true },
+                { name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true },
+                { name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false },
+                { name: "🛠️ รายละเอียด", value: detailValue, inline: false }
+            ],
+            timestamp: new Date().toISOString(),
+            footer: { text: "TCN OS v8.6 • System Log" }
+        };
+
+        // ใช้ FormData เพื่อหลบการบล็อก CORS ของเบราว์เซอร์
+        let formData = new FormData();
+        formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
+
+        fetch(WEBHOOK_URL, { method: 'POST', body: formData }).catch(e => console.error("Discord error:", e));
+    }
 
     setInterval(() => {
         const now = new Date();
@@ -523,6 +569,7 @@
                 const result = await res.json();
                 if (result.status === "success") { 
                     playSuccessSound(); 
+                    sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
                     Swal.fire({ icon: 'success', title: 'เพิ่มงบอู่สำเร็จ!', text: `เพิ่มเข้ากองกลางอู่ $${amt.toLocaleString()}`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
                 } else throw new Error(result.message);
             } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
@@ -591,6 +638,7 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
+                sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
                 document.getElementById('teamAmountInput').value = ''; 
                 document.getElementById('teamNoteInput').value = ''; 
                 Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
@@ -653,6 +701,7 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
+                sendDiscordWebhookToChannel(payload); // 🔥 ยิงเข้าดิสคอร์ดทันที
                 for (let name in cart) {
                     let item = itemsData.find(i => i.name === name);
                     if (item && currentAction === "restock") item.stock += cart[name]; 
@@ -675,7 +724,6 @@
         return new Date(dateStr);
     }
 
-    // 🔥 แก้สมการ 20% (ช่าง) และ 80% (อู่) ตรงฟังก์ชันนี้เรียบร้อยแล้ว 🔥
     function renderChart() {
         if (!logsData.length) return; 
         
@@ -708,7 +756,6 @@
             }
         });
 
-        // 🔥 แก้เป็นคูณ 0.80 (80% เข้าอู่)
         let totalCentralFund = (totalIncome * 0.80) + totalAddedBudget;
         let netProfit = totalCentralFund - totalExpense;
         
@@ -736,11 +783,9 @@
         mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
         mechKeys.forEach(name => {
             let mechIncome = mechanicTotals[name]; 
-            // 🔥 สมการแบ่งเงิน (ช่าง 20% / อู่ 80%)
             let mechCut = mechIncome * 0.20;
             let garageCut = mechIncome * 0.80; 
 
-            // 🔥 แก้ตัวอักษรให้แสดง (80%) และ (20%) ถูกต้อง
             statsContainer.innerHTML += `
                 <div class="mechanic-stat-card">
                     <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
