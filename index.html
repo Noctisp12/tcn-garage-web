@@ -194,7 +194,6 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
             <h1 id="brandTitle">TCN Garage</h1>
@@ -227,7 +226,6 @@
     </div>
 </div>
 
-<!-- 📊 Dashboard Modal: สำหรับ อู่ -->
 <div class="app-modal" id="dashboardModal">
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
@@ -259,7 +257,6 @@
     </div>
 </div>
 
-<!-- 💎 Team Fund Modal -->
 <div class="app-modal" id="teamModal">
     <div class="modal-content" style="width: 550px;">
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
@@ -297,6 +294,7 @@
 </div>
 
 <script>
+    // 🔥 ลิงก์เดิมของเถ้าแก่ (ไม่ต้องเปลี่ยน) 🔥
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
@@ -408,7 +406,7 @@
             let stockLabelHTML = currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
             let btnHTML = (currentDisplayStock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
-            const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
+            const fallback = `<span>NO IMG${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
         });
@@ -462,7 +460,7 @@
             }
 
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] /g, "");
-            let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
+            let noteHtml = log.note ? `<small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
             tbody.innerHTML += `
@@ -677,6 +675,7 @@
         return new Date(dateStr);
     }
 
+    // 🔥 แก้สมการ 20% (ช่าง) และ 80% (อู่) ตรงฟังก์ชันนี้เรียบร้อยแล้ว 🔥
     function renderChart() {
         if (!logsData.length) return; 
         
@@ -709,7 +708,8 @@
             }
         });
 
-        let totalCentralFund = (totalIncome * 0.70) + totalAddedBudget;
+        // 🔥 แก้เป็นคูณ 0.80 (80% เข้าอู่)
+        let totalCentralFund = (totalIncome * 0.80) + totalAddedBudget;
         let netProfit = totalCentralFund - totalExpense;
         
         document.getElementById('dashCentralFund').innerText = "$" + totalCentralFund.toLocaleString();
@@ -729,7 +729,6 @@
         const statsContainer = document.getElementById('mechanicStatsContainer'); statsContainer.innerHTML = ''; 
         const mechKeys = Object.keys(mechanicTotals);
 
-        // 🔥 ถ้าไม่มีคนเบิกเลย ให้เช็คว่ามีการเพิ่มงบอย่างเดียวไหม
         if (mechKeys.length === 0 && totalAddedBudget === 0) { 
             statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; return; 
         }
@@ -737,21 +736,21 @@
         mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
         mechKeys.forEach(name => {
             let mechIncome = mechanicTotals[name]; 
-            let mechCut = mechIncome * 0.30;
-            let garageCut = mechIncome * 0.70; // คำนวณ 70% ออกมา
+            // 🔥 สมการแบ่งเงิน (ช่าง 20% / อู่ 80%)
+            let mechCut = mechIncome * 0.20;
+            let garageCut = mechIncome * 0.80; 
 
-            // 🔥 เพิ่มบรรทัดโชว์ "ส่วนแบ่งเข้าอู่ (70%)" ลงในการ์ดช่าง 🔥
+            // 🔥 แก้ตัวอักษรให้แสดง (80%) และ (20%) ถูกต้อง
             statsContainer.innerHTML += `
                 <div class="mechanic-stat-card">
                     <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
                     <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่ (100%):</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
-                    <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (70%):</span> <span>+$${garageCut.toLocaleString()}</span></div>
-                    <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (30%):</span> <span>$${mechCut.toLocaleString()}</span></div>
+                    <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (80%):</span> <span>+$${garageCut.toLocaleString()}</span></div>
+                    <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (20%):</span> <span>$${mechCut.toLocaleString()}</span></div>
                 </div>
             `;
         });
 
-        // 🔥 สร้างการ์ดแสดงยอด "เพิ่มงบอู่" แยกให้เห็นชัดๆ หากมีการเติมเงินในวันนั้น 🔥
         if (totalAddedBudget > 0) {
             statsContainer.innerHTML += `
                 <div class="mechanic-stat-card" style="border-left-color: var(--success);">
