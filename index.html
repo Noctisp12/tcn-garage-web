@@ -71,7 +71,7 @@
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
         .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
-        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-image img { width: 100%; height: 100%; object-fit: contain; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -164,7 +164,7 @@
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
                 <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติอู่</button>
                 <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
-                <button class="tab-btn" onclick="addCentralFund()" style="border-color: var(--success); color: var(--success);">💰 เพิ่มงบอู่</button>
+                <button class="tab-btn" onclick="openTestModal()" style="border-color: #ff00ff; color: #ff00ff;">🧪 ปุ่มทดสอบระบบ</button>
             </div>
 
             <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 จัดการกองกลางทีม</button>
@@ -504,11 +504,11 @@
             
             if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
-            } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
+            } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
-            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] /g, "");
+            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
             let noteHtml = log.note ? `<small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
@@ -535,45 +535,45 @@
         }
     }
 
-    async function addCentralFund() {
+    async function openTestModal() {
         playTabSound();
         const { value: pin } = await Swal.fire({
-            title: '🔒 กรุณาใส่รหัสผ่าน (อู่)',
+            title: '🔒 กรุณาใส่รหัสผ่านทดสอบ',
             input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
             showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: 'var(--gold-main)', cancelButtonColor: '#333'
+            confirmButtonColor: '#ff00ff', cancelButtonColor: '#333'
         });
 
-        if (pin !== '1990') {
+        if (pin !== '2547') {
             if (pin) { playErrorSound(); Swal.fire({icon: 'error', title: 'รหัสไม่ถูกต้อง!', background: '#141414', color: '#fff'}); }
             return;
         }
 
         const { value: formValues } = await Swal.fire({
-            title: '💰 เพิ่มงบกองกลางอู่',
+            title: '🧪 เรียกใช้การทดสอบระบบ (กระตุ้น Sheet)',
             html:
-                '<input id="swal-input1" class="swal2-input" type="number" placeholder="ระบุจำนวนเงินเพิ่มงบอู่ ($)" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
-                '<input id="swal-input2" class="swal2-input" placeholder="หมายเหตุ (เช่น ทุนเถ้าแก่)" style="background:#1f1f1f; color:#fff; border-color:#333;">',
+                '<input id="swal-input1" class="swal2-input" type="number" placeholder="จำนวนเงินทดสอบ ($)" value="1" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
+                '<input id="swal-input2" class="swal2-input" value="ทดสอบระบบรีเฟรชชีต" placeholder="หมายเหตุ" style="background:#1f1f1f; color:#fff; border-color:#333;">',
             focusConfirm: false, background: '#141414', color: '#fff',
-            showCancelButton: true, confirmButtonText: 'ยืนยันเพิ่มงบอู่', cancelButtonText: 'ยกเลิก', confirmButtonColor: 'var(--success)',
+            showCancelButton: true, confirmButtonText: 'ส่งข้อมูลทดสอบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ff00ff',
             preConfirm: () => { return [document.getElementById('swal-input1').value, document.getElementById('swal-input2').value] }
         });
 
         if (formValues) {
             let amt = Number(formValues[0]);
-            let note = formValues[1] || 'เพิ่มงบกองกลางอู่';
+            let note = formValues[1] || 'ทดสอบระบบ';
             if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
 
-            let payload = { name: "ADMIN / OWNER", order: "💰 [เพิ่มงบกองกลาง]", note: note, total: amt, cart: {}, action: "add_budget" };
+            let payload = { name: "TEST_SYSTEM", order: "🧪 [ทดสอบระบบ]", note: note, total: amt, cart: {}, action: "add_budget" };
 
-            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังส่งข้อมูลทดสอบ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
             try { 
                 const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
                 const result = await res.json();
                 if (result.status === "success") { 
                     playSuccessSound(); 
                     sendDiscordWebhookToChannel(payload);
-                    Swal.fire({ icon: 'success', title: 'เพิ่มงบอู่สำเร็จ!', text: `เพิ่มเข้ากองกลางอู่ $${amt.toLocaleString()}`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+                    Swal.fire({ icon: 'success', title: 'ส่งข้อมูลทดสอบสำเร็จ!', text: `กระตุ้นระบบเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
                 } else throw new Error(result.message);
             } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
         }
@@ -744,7 +744,7 @@
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
-                if (log.mechanic === "TEAM") return; 
+                if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM") return; // ซ่อน TEST_SYSTEM จากกราฟด้วย
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
