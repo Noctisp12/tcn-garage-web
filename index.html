@@ -326,7 +326,10 @@
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
 
-        if (payload.action === "restock") {
+        // 🔥 เพิ่มการเช็กดักจับชื่อ TEST_SYSTEM ตรงนี้เลยครับ 🔥
+        if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; color = 16711935; // สีชมพูอมม่วง
+        } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
             title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
