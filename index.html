@@ -211,9 +211,9 @@
             <option value="Royn_Enrico">4. Royn Enrico</option>
             <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
             <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
+            <option value="Daryl_Fender">7. Daryl Fender</option>
         </select>
 
-        <!-- ช่องใส่ชื่อลูกค้า -->
         <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
         <input type="text" id="customerInput" placeholder="ระบุชื่อลูกค้า..." autocomplete="off">
 
@@ -330,7 +330,6 @@
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
         
-        // 🌟 คำนวณส่วนแบ่งตามชื่อช่าง
         let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
@@ -342,11 +341,15 @@
             garageShare = totalAmount;
             mechPct = "0%";
             garagePct = "100%";
+        } else if (displayUser === "Daryl Fender") {
+            mechShare = totalAmount * 0.10;
+            garageShare = totalAmount * 0.90;
+            mechPct = "10%";
+            garagePct = "90%";
         }
 
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
-
         let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
 
         if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
@@ -382,7 +385,7 @@
             color: color,
             fields: fields,
             timestamp: new Date().toISOString(),
-            footer: { text: "TCN OS v8.6 • System Log" }
+            footer: { text: "TCN OS v8.9 • System Log" }
         };
 
         let formData = new FormData();
@@ -475,10 +478,7 @@
     function getDisplayStock(itemName) {
         let item = itemsData.find(i => i.name === itemName);
         if (!item) return 0;
-        
-        // 🔥 แทรกบรรทัดนี้: ถ้าเป็นอมตะ ให้ข้ามการคำนวณไปเลย 🔥
         if (item.stock === "unlimited") return "unlimited";
-        
         let cartQty = cart[itemName] || 0;
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
     }
@@ -489,8 +489,6 @@
 
         filteredItems.forEach(item => {
             let currentDisplayStock = getDisplayStock(item.name);
-            
-            // 🔥 ปรับสีคำว่า "∞ ไม่จำกัด" เป็นสีเทา text-muted ตรงนี้ครับ 🔥
             let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
             
             let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
@@ -581,7 +579,7 @@
         playTabSound();
         const customerLabel = document.getElementById('customerLabel');
         const customerInput = document.getElementById('customerInput');
-        
+
         if (isAdminMode) {
             isAdminMode = false; clearCart(); updateSidebarUI();
             if(customerLabel) customerLabel.style.display = 'block';
@@ -821,7 +819,7 @@
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
-                if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM") return; 
+                if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM" || log.mechanic === "TEST SYSTEM") return; 
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
@@ -858,6 +856,11 @@
                     garageCut = mechIncome;
                     pctMech = "0%";
                     pctGarage = "100%";
+                } else if (name === "Daryl Fender") {
+                    mechCut = mechIncome * 0.10;
+                    garageCut = mechIncome * 0.90;
+                    pctMech = "10%";
+                    pctGarage = "90%";
                 }
                 
                 totalCentralFund += garageCut;
