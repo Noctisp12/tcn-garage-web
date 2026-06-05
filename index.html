@@ -71,12 +71,13 @@
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
         .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
-        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-image img { width: 100%; height: 100%; object-fit: contain; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
         
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
@@ -132,9 +133,9 @@
         .filter-select:focus { border-color: var(--gold-main); }
 
         .exec-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .exec-card { flex: 1; min-width: 120px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
+        .exec-card { flex: 1; min-width: 140px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
         .exec-card span { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
-        .exec-card h3 { font-size: 20px; font-weight: bold; margin: 0; }
+        .exec-card h3 { font-size: 22px; font-weight: bold; margin: 0; }
 
         .mechanic-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
         .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; transition: 0.3s; border-left: 3px solid var(--gold-main); }
@@ -151,7 +152,7 @@
 <body>
 
 <div class="status-bar">
-    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.8</span></div>
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.9</span></div>
     <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
 </div>
 
@@ -208,9 +209,11 @@
             <option value="Lucas_Harper">2. Lucas Harper</option>
             <option value="Carlious_Cedric_Rutherford">3. Carlious Cedric Rutherford</option>
             <option value="Royn_Enrico">4. Royn Enrico</option>
+            <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
+            <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
         </select>
-        
-        <!-- 🔥 ช่องใส่ชื่อลูกค้า 🔥 -->
+
+        <!-- ช่องใส่ชื่อลูกค้า -->
         <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
         <input type="text" id="customerInput" placeholder="ระบุชื่อลูกค้า..." autocomplete="off">
 
@@ -244,11 +247,11 @@
 
         <div class="exec-summary">
             <div class="exec-card">
-                <span>รายรับเข้าอู่ (80%)</span>
+                <span>รายรับเข้าอู่สุทธิ</span>
                 <h3 id="dashCentralFund" style="color: var(--gold-main);">$0</h3>
             </div>
             <div class="exec-card">
-                <span>ส่วนแบ่งช่างรวม (20%)</span>
+                <span>ส่วนแบ่งช่างรวม</span>
                 <h3 id="dashMechanicShare" style="color: var(--cyan);">$0</h3>
             </div>
             <div class="exec-card">
@@ -326,17 +329,29 @@
         let title = "🧾 [WITHDRAW] TCN GARAGE";
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
+        
+        // 🌟 คำนวณส่วนแบ่งตามชื่อช่าง
+        let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
+        let mechPct = "20%";
+        let garagePct = "80%";
+
+        if (displayUser === "Scarlatt Chaos Rihanna" || displayUser === "Buckley Red Rihanna") {
+            mechShare = 0;
+            garageShare = totalAmount;
+            mechPct = "0%";
+            garagePct = "100%";
+        }
+
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
 
         let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
 
-        // 🔥 เพิ่มเงื่อนไขดักจับว่าถ้าเป็น TEST_SYSTEM ให้โชว์หัวข้อเทสระบบ
         if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
             title = "🧪 [SYSTEM] ทดสอบระบบ"; 
-            color = 16711935; // สีชมพูสะท้อนแสง
+            color = 16711935;
         } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
@@ -347,11 +362,11 @@
             title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
         } else {
             title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
-            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง (20%): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ (80%): $" + garageShare.toLocaleString('en-US') + "\n" + block;
+            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง ("+mechPct+"): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ ("+garagePct+"): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         }
 
         let fields = [
-            { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true }
+            { name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }
         ];
 
         if (payload.action === "withdraw") {
@@ -367,7 +382,7 @@
             color: color,
             fields: fields,
             timestamp: new Date().toISOString(),
-            footer: { text: "TCN OS v8.8 • System Log" }
+            footer: { text: "TCN OS v8.6 • System Log" }
         };
 
         let formData = new FormData();
@@ -460,7 +475,6 @@
     function getDisplayStock(itemName) {
         let item = itemsData.find(i => i.name === itemName);
         if (!item) return 0;
-        if (item.stock === "unlimited") return "unlimited";
         let cartQty = cart[itemName] || 0;
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
     }
@@ -471,16 +485,8 @@
 
         filteredItems.forEach(item => {
             let currentDisplayStock = getDisplayStock(item.name);
-            let stockLabelHTML = "";
-            let btnHTML = "";
-            
-            if (currentDisplayStock === "unlimited") {
-                stockLabelHTML = `<span class="stock" style="color: var(--text-muted);">∞ ไม่จำกัด</span>`;
-                btnHTML = `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>`;
-            } else {
-                stockLabelHTML = currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-                btnHTML = (currentDisplayStock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
-            }
+            let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock" style="color: var(--cyan);">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
+            let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
@@ -535,10 +541,19 @@
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
-            // ถ้ามีชื่อลูกค้าในคอลัมน์ใหม่ จะเอามาโชว์ที่นี่ ถ้าไม่มีจะเป็นขีด -
-            let customerName = log.customer && log.customer !== "-" ? log.customer : "-";
+            let rawOrder = log.order || "";
+            let customerName = "-";
             
-            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
+            if (rawOrder.includes("ลูกค้า:")) {
+                let lines = rawOrder.split('\n');
+                if(lines[0].includes("ลูกค้า:")) {
+                    customerName = lines[0].replace("ลูกค้า:", "").trim();
+                    lines.shift(); 
+                    rawOrder = lines.join('\n');
+                }
+            }
+
+            let cleanOrder = rawOrder.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
             let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
@@ -721,7 +736,6 @@
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
         if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
         
-        // เพิ่มบรรทัดลูกค้าในบิล (ถ้ามี)
         let custHtml = actionType === "withdraw" && customer !== "" ? `<p style="margin: 5px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : '';
 
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p>${custHtml}<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
@@ -736,7 +750,6 @@
 
         if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         
-        // 🔥 บังคับกรอกชื่อลูกค้าถ้าไม่ใช่โหมดเติมสต็อก
         if (!isAdminMode && customer === "") { 
             playErrorSound(); 
             return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุชื่อลูกค้าด้วยครับ!', background: '#141414', color: '#fff' }); 
@@ -767,6 +780,7 @@
                     }
                 }
                 clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
+                document.getElementById('customerInput').value = '';
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
         } catch (e) { 
@@ -815,9 +829,55 @@
             }
         });
 
-        let totalCentralFund = (totalIncome * 0.80) + totalAddedBudget;
+        let totalCentralFund = totalAddedBudget;
+        let totalMechanicShare = 0;
+
+        const statsContainer = document.getElementById('mechanicStatsContainer'); statsContainer.innerHTML = ''; 
+        const mechKeys = Object.keys(mechanicTotals);
+
+        if (mechKeys.length === 0 && totalAddedBudget === 0) { 
+            statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; 
+        } else {
+            mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
+            mechKeys.forEach(name => {
+                let mechIncome = mechanicTotals[name]; 
+                let mechCut = mechIncome * 0.20;
+                let garageCut = mechIncome * 0.80; 
+                let pctMech = "20%";
+                let pctGarage = "80%";
+
+                if (name === "Scarlatt Chaos Rihanna" || name === "Buckley Red Rihanna") {
+                    mechCut = 0;
+                    garageCut = mechIncome;
+                    pctMech = "0%";
+                    pctGarage = "100%";
+                }
+                
+                totalCentralFund += garageCut;
+                totalMechanicShare += mechCut;
+
+                statsContainer.innerHTML += `
+                    <div class="mechanic-stat-card">
+                        <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
+                        <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่ (100%):</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
+                        <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (${pctGarage}):</span> <span>+$${garageCut.toLocaleString()}</span></div>
+                        <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (${pctMech}):</span> <span>$${mechCut.toLocaleString()}</span></div>
+                    </div>
+                `;
+            });
+
+            if (totalAddedBudget > 0) {
+                statsContainer.innerHTML += `
+                    <div class="mechanic-stat-card" style="border-left-color: var(--success);">
+                        <h4 style="color:var(--success); font-size:15px; margin-bottom:10px;">💰 เพิ่มงบอู่</h4>
+                        <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>ประเภท:</span> <span style="color:#fff;">เงินทุน/เงินส่วนตัว</span></div>
+                        <div style="font-size: 14px; color: var(--success); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>สมทบเข้าอู่:</span> <span>+$${totalAddedBudget.toLocaleString()}</span></div>
+                    </div>
+                `;
+            }
+        }
+
         let netProfit = totalCentralFund - totalExpense;
-        let totalMechanicShare = totalIncome * 0.20;
         
         document.getElementById('dashCentralFund').innerText = "$" + totalCentralFund.toLocaleString();
         document.getElementById('dashMechanicShare').innerText = "$" + totalMechanicShare.toLocaleString();
@@ -830,42 +890,9 @@
 
         chartInstance = new Chart(ctx, { 
             type: 'bar', 
-            data: { labels: ['รายรับ', 'รายจ่าย'], datasets: [{ label: 'ยอดเงิน (USD)', data: [totalCentralFund, totalExpense], backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(255, 77, 77, 0.7)'], borderColor: ['#D4AF37', '#ff4d4d'], borderWidth: 1 }] }, 
+            data: { labels: ['รายรับเข้าอู่สุทธิ', 'รายจ่าย'], datasets: [{ label: 'ยอดเงิน (USD)', data: [totalCentralFund, totalExpense], backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(255, 77, 77, 0.7)'], borderColor: ['#D4AF37', '#ff4d4d'], borderWidth: 1 }] }, 
             options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { display: false } } } 
         });
-
-        const statsContainer = document.getElementById('mechanicStatsContainer'); statsContainer.innerHTML = ''; 
-        const mechKeys = Object.keys(mechanicTotals);
-
-        if (mechKeys.length === 0 && totalAddedBudget === 0) { 
-            statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; return; 
-        }
-
-        mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
-        mechKeys.forEach(name => {
-            let mechIncome = mechanicTotals[name]; 
-            let mechCut = mechIncome * 0.20;
-            let garageCut = mechIncome * 0.80; 
-
-            statsContainer.innerHTML += `
-                <div class="mechanic-stat-card">
-                    <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
-                    <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่ (100%):</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
-                    <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (80%):</span> <span>+$${garageCut.toLocaleString()}</span></div>
-                    <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (20%):</span> <span>$${mechCut.toLocaleString()}</span></div>
-                </div>
-            `;
-        });
-
-        if (totalAddedBudget > 0) {
-            statsContainer.innerHTML += `
-                <div class="mechanic-stat-card" style="border-left-color: var(--success);">
-                    <h4 style="color:var(--success); font-size:15px; margin-bottom:10px;">💰 เพิ่มงบอู่</h4>
-                    <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>ประเภท:</span> <span style="color:#fff;">เงินทุน/เงินส่วนตัว</span></div>
-                    <div style="font-size: 14px; color: var(--success); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>สมทบเข้าอู่:</span> <span>+$${totalAddedBudget.toLocaleString()}</span></div>
-                </div>
-            `;
-        }
     }
 </script>
 </body>
