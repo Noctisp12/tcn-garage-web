@@ -71,7 +71,7 @@
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
         .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
-        .item-image img { width: 100%; height: 100%; object-fit: conver; }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -184,7 +184,7 @@
                         <th>เวลาทำรายการ</th>
                         <th>สถานะ</th>
                         <th>พนักงาน</th>
-                        <th>ลูกค้า</th>
+                        <th style="color: var(--cyan);">ลูกค้า</th>
                         <th>รายการ</th>
                         <th>ยอดรวม ($)</th>
                     </tr>
@@ -209,10 +209,10 @@
             <option value="Carlious_Cedric_Rutherford">3. Carlious Cedric Rutherford</option>
             <option value="Royn_Enrico">4. Royn Enrico</option>
         </select>
-
-        <!-- เพิ่มช่องชื่อลูกค้าตรงนี้ -->
-        <label for="customerName" id="customerLabel">ชื่อลูกค้า:</label>
-        <input type="text" id="customerName" placeholder="กรอกชื่อลูกค้าที่นี่..." required>
+        
+        <!-- 🔥 ช่องใส่ชื่อลูกค้า 🔥 -->
+        <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
+        <input type="text" id="customerInput" placeholder="ระบุชื่อลูกค้า..." autocomplete="off">
 
         <div id="cartSection">
             <label id="cartLabel">รายการที่เลือก:</label>
@@ -331,34 +331,41 @@
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
 
+        // ดึงชื่อลูกค้ามาโชว์ในดิสคอร์ด ถ้าไม่มีให้โชว์ "-"
+        let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
+
         if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
-            if (payload.name === "TEST_SYSTEM") {
-                title = "🧪 [SYSTEM] ทดสอบระบบ / รีเฟรชชีต"; color = 16711935;
-            } else {
-                title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
-            }
+            title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
         } else if (payload.action === "add_team_fund") {
             title = "💎 [TEAM] ฝากเงินเข้ากองกลางทีม"; color = 52427;
         } else if (payload.action === "withdraw_team_fund") {
             title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
+        } else if (payload.name === "TEST_SYSTEM") {
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; color = 16711935;
         } else {
             title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
             detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง (20%): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ (80%): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         }
 
+        let fields = [
+            { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true }
+        ];
+
+        // ถ้าเป็นการเบิกออก ให้เพิ่มช่องลูกค้าเข้าไปในดิสคอร์ดด้วย
+        if (payload.action === "withdraw") {
+            fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
+        }
+
+        fields.push({ name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true });
+        fields.push({ name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false });
+        fields.push({ name: "🛠️ รายละเอียด", value: detailValue, inline: false });
+
         let embed = {
             title: title,
             color: color,
-            fields: [
-                { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true },
-                // ใส่ชื่อลูกค้าในฟิลด์ที่ส่งไป Discord
-                { name: "🧑 ลูกค้า", value: payload.customer || "-", inline: true },
-                { name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true },
-                { name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false },
-                { name: "🛠️ รายละเอียด", value: detailValue, inline: false }
-            ],
+            fields: fields,
             timestamp: new Date().toISOString(),
             footer: { text: "TCN OS v8.8 • System Log" }
         };
@@ -466,7 +473,7 @@
             let stockLabelHTML = currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
             let btnHTML = (currentDisplayStock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
-            const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
+            const fallback = `<span>NO IMG${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
         });
@@ -503,7 +510,7 @@
         const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
         let garageLogs = logsData.filter(log => log.mechanic !== "TEAM");
 
-        if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
+        if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
         
         let displayLogs = garageLogs.slice(0, 30);
         displayLogs.forEach(log => {
@@ -519,26 +526,20 @@
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
+            // ถ้ามีชื่อลูกค้าในคอลัมน์ใหม่ จะเอามาโชว์ที่นี่ ถ้าไม่มีจะเป็นขีด -
+            let customerName = log.customer && log.customer !== "-" ? log.customer : "-";
+            
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
-            let noteHtml = log.note ? `<br><small style="color:#888;">หมายเหตุ: ${log.note}</small>` : '';
+            let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
-            // ดึงชื่อลูกค้าจากหมายเหตุหรือฟิลด์ที่เกี่ยวข้อง ถ้าไม่มีให้แสดงขีด
-            let customerName = "-";
-            if (log.order.includes("ลูกค้า:")) {
-                let match = log.order.match(/ลูกค้า:\s*(.+)/);
-                if(match) customerName = match[1];
-            } else if (log.note) {
-                 customerName = log.note; // ชั่วคราว: สมมติว่า note คือชื่อลูกค้าถ้าไม่มีใน order
-                 noteHtml = ""; // ซ่อน note ถ้าเอามาแสดงเป็นชื่อลูกค้าแล้ว
-            }
 
             tbody.innerHTML += `
                 <tr>
                     <td>${dateStr}</td>
                     <td>${statusBadge}</td>
                     <td>${(log.mechanic || '').replace(/_/g, ' ')}</td>
-                    <td style="color: #aaa;">${customerName}</td>
-                    <td style="font-size: 13px; color: #ccc; white-space: pre-line; line-height: 1.5;">${cleanOrder} ${noteHtml}</td>
+                    <td style="color: var(--cyan); font-weight: bold;">${customerName}</td>
+                    <td style="font-size: 13px; color: #ccc; white-space: pre-line; line-height: 1.5;">${cleanOrder}${noteHtml}</td>
                     <td class="total-col" style="${totalColor}">$${displayTotal.toLocaleString()}</td>
                 </tr>
             `;
@@ -547,11 +548,18 @@
 
     function toggleRestockMode() {
         playTabSound();
+        const customerLabel = document.getElementById('customerLabel');
+        const customerInput = document.getElementById('customerInput');
+        
         if (isAdminMode) {
             isAdminMode = false; clearCart(); updateSidebarUI();
+            if(customerLabel) customerLabel.style.display = 'block';
+            if(customerInput) customerInput.style.display = 'block';
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'โหมดเบิกของ', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         } else {
             isAdminMode = true; clearCart(); updateSidebarUI();
+            if(customerLabel) customerLabel.style.display = 'none';
+            if(customerInput) customerInput.style.display = 'none';
             Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'โหมดเติมสต็อก', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
         }
     }
@@ -585,7 +593,7 @@
             let note = formValues[1] || 'ทดสอบระบบ';
             if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
 
-            let payload = { name: "TEST_SYSTEM", order: "🧪 [ทดสอบระบบ]", note: note, total: amt, cart: {}, action: "add_budget" };
+            let payload = { name: "TEST_SYSTEM", customer: "-", order: "🧪 [ทดสอบระบบ]", note: note, total: amt, cart: {}, action: "add_budget" };
 
             Swal.fire({ title: 'กำลังส่งข้อมูลทดสอบ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
             try { 
@@ -647,6 +655,7 @@
 
         let payload = { 
             name: "TEAM", 
+            customer: "-",
             order: isDeposit ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]", 
             note: note, 
             total: amt, 
@@ -672,25 +681,15 @@
 
     function updateSidebarUI() {
         const brandTitle = document.getElementById('brandTitle'); const brandSub = document.getElementById('brandSub'); const submitBtn = document.getElementById('submitBtn'); const userLabel = document.getElementById('userLabel'); const totalLabel = document.getElementById('totalLabel'); const totalBoxWrapper = document.getElementById('totalBoxWrapper'); const btnRestock = document.getElementById('btnRestockMode'); const noteLabel = document.getElementById('noteLabel');
-        // เพิ่มการเข้าถึงช่องชื่อลูกค้า
-        const customerLabel = document.getElementById('customerLabel');
-        const customerNameInput = document.getElementById('customerName');
-
         if(isAdminMode) {
             brandTitle.innerText = "TCN RESTOCK"; brandTitle.style.color = "var(--warning)"; brandSub.innerText = "โหมดเติมอะไหล่เข้าสต็อกอู่ 📦"; userLabel.innerText = "เลือกพนักงานผู้เติมสต็อก:"; totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)"; totalBoxWrapper.style.borderColor = "var(--warning)"; submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง"; submitBtn.style.background = "var(--warning)"; btnRestock.style.background = 'var(--warning)'; btnRestock.style.color = '#000'; btnRestock.innerText = '❌ ยกเลิกเติมสต็อก'; noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
-            // ซ่อนช่องชื่อลูกค้าตอนเติมสต็อก
-            customerLabel.style.display = 'none';
-            customerNameInput.style.display = 'none';
         } else {
             brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)"; brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดอู่)"; userLabel.innerText = "เลือกพนักงานผู้เบิก:"; totalLabel.innerText = "ยอดรวมการเบิก ($)"; totalBoxWrapper.style.borderColor = "var(--gold-main)"; submitBtn.innerText = "ยืนยันการทำรายการ"; submitBtn.style.background = "var(--gold-main)"; btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก'; noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
-            // แสดงช่องชื่อลูกค้าตอนเบิกของ
-            customerLabel.style.display = 'block';
-            customerNameInput.style.display = 'block';
         }
         if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') renderItems(currentCategory, currentSearchQuery);
     }
 
-    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; document.getElementById('customerName').value = ''; updateUI(); }
+    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
 
     function changeTab(cat, el) { 
         currentCategory = cat; document.querySelectorAll('#tab-container .tab-btn').forEach(t => t.classList.remove('active')); 
@@ -713,28 +712,25 @@
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
         if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
         
-        // เพิ่มชื่อลูกค้าลงในบิล (ถ้าเป็นการเบิกปกติ)
-        let customerHtml = (actionType === "withdraw" && customer) ? `<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : `<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p>`;
-        // ถ้ายืมที่ลูกค้า ให้วันที่ไปต่อท้ายแทน
-        let dateHtml = (actionType === "withdraw" && customer) ? `<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p>` : '';
+        // เพิ่มบรรทัดลูกค้าในบิล (ถ้ามี)
+        let custHtml = actionType === "withdraw" && customer !== "" ? `<p style="margin: 5px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : '';
 
-        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p>${customerHtml}${dateHtml}<table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p>${custHtml}<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0; white-space: pre-line;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
         html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
 
     async function submitOrder() {
-        const userSelect = document.getElementById('userSelect'); 
-        const user = userSelect.options[userSelect.selectedIndex].value; 
+        const userSelect = document.getElementById('userSelect'); const user = userSelect.options[userSelect.selectedIndex].value; 
         const note = document.getElementById('noteInput').value;
-        const customer = document.getElementById('customerName').value.trim(); // ดึงชื่อลูกค้า
+        const customer = document.getElementById('customerInput').value.trim();
 
         if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
         
-        // เช็คว่าอยู่ในโหมดเบิกของ และไม่ได้กรอกชื่อลูกค้า
+        // 🔥 บังคับกรอกชื่อลูกค้าถ้าไม่ใช่โหมดเติมสต็อก
         if (!isAdminMode && customer === "") { 
             playErrorSound(); 
-            return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณากรอกชื่อลูกค้าก่อนทำรายการเบิก', background: '#141414', color: '#fff' }); 
+            return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุชื่อลูกค้าด้วยครับ!', background: '#141414', color: '#fff' }); 
         }
 
         if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
@@ -742,8 +738,7 @@
         let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
         let finalOrder = orderArr.join('\n'); 
         let currentAction = isAdminMode ? "restock" : "withdraw";
-        
-        // แนบข้อมูลชื่อลูกค้าไปกับ payload
+
         const payload = { name: user, customer: customer, order: finalOrder, note: note, total: total, cart: cart, action: currentAction };
         
         let invoiceHtmlStr = generateInvoiceHTML(user, customer, note, currentAction);
@@ -760,7 +755,9 @@
                     if (item && currentAction === "restock") item.stock += cart[name]; 
                     if (item && currentAction === "withdraw") item.stock -= cart[name];
                 }
-                clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
+                clearCart(); 
+                document.getElementById('customerInput').value = ''; // เคลียร์ช่องลูกค้า
+                isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
         } catch (e) { 
@@ -798,7 +795,7 @@
                 
                 if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
-                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
+                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
                 } else {
                     totalIncome += amount;
