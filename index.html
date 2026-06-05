@@ -460,6 +460,7 @@
     function getDisplayStock(itemName) {
         let item = itemsData.find(i => i.name === itemName);
         if (!item) return 0;
+        if (item.stock === "unlimited") return "unlimited";
         let cartQty = cart[itemName] || 0;
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
     }
@@ -470,10 +471,18 @@
 
         filteredItems.forEach(item => {
             let currentDisplayStock = getDisplayStock(item.name);
-            let stockLabelHTML = currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-            let btnHTML = (currentDisplayStock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            let stockLabelHTML = "";
+            let btnHTML = "";
             
-            const fallback = `<span>NO IMG${item.name.substring(0, 3).toUpperCase()}</span>`;
+            if (currentDisplayStock === "unlimited") {
+                stockLabelHTML = `<span class="stock" style="color: var(--cyan);">∞ ไม่จำกัด</span>`;
+                btnHTML = `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>`;
+            } else {
+                stockLabelHTML = currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
+                btnHTML = (currentDisplayStock > 0 || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            }
+            
+            const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
         });
@@ -483,7 +492,7 @@
         let item = itemsData.find(i => i.name === name); 
         if (item) {
             let currentCartQty = cart[name] || 0;
-            if(!isAdminMode && (item.stock - currentCartQty) > 0) { 
+            if(!isAdminMode && (item.stock === "unlimited" || (item.stock - currentCartQty) > 0)) { 
                 total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
             } else if (isAdminMode) { 
                 total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
@@ -496,7 +505,7 @@
         let currentCartQty = cart[name] || 0;
 
         if (change > 0) { 
-            if (!isAdminMode && (item.stock - currentCartQty) > 0) { cart[name]++; total += item.price; playAddSound(); } 
+            if (!isAdminMode && (item.stock === "unlimited" || (item.stock - currentCartQty) > 0)) { cart[name]++; total += item.price; playAddSound(); } 
             else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } 
             else { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
         }
@@ -752,12 +761,12 @@
                 sendDiscordWebhookToChannel(payload);
                 for (let name in cart) {
                     let item = itemsData.find(i => i.name === name);
-                    if (item && currentAction === "restock") item.stock += cart[name]; 
-                    if (item && currentAction === "withdraw") item.stock -= cart[name];
+                    if (item && item.stock !== "unlimited") {
+                        if (currentAction === "restock") item.stock += cart[name]; 
+                        if (currentAction === "withdraw") item.stock -= cart[name];
+                    }
                 }
-                clearCart(); 
-                document.getElementById('customerInput').value = ''; // เคลียร์ช่องลูกค้า
-                isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
+                clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
         } catch (e) { 
