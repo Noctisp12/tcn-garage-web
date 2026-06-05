@@ -331,10 +331,13 @@
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
 
-        // ดึงชื่อลูกค้ามาโชว์ในดิสคอร์ด ถ้าไม่มีให้โชว์ "-"
         let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
 
-        if (payload.action === "restock") {
+        // 🔥 เพิ่มเงื่อนไขดักจับว่าถ้าเป็น TEST_SYSTEM ให้โชว์หัวข้อเทสระบบ
+        if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; 
+            color = 16711935; // สีชมพูสะท้อนแสง
+        } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
             title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
@@ -342,8 +345,6 @@
             title = "💎 [TEAM] ฝากเงินเข้ากองกลางทีม"; color = 52427;
         } else if (payload.action === "withdraw_team_fund") {
             title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
-        } else if (payload.name === "TEST_SYSTEM") {
-            title = "🧪 [SYSTEM] ทดสอบระบบ"; color = 16711935;
         } else {
             title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
             detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง (20%): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ (80%): $" + garageShare.toLocaleString('en-US') + "\n" + block;
@@ -353,7 +354,6 @@
             { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true }
         ];
 
-        // ถ้าเป็นการเบิกออก ให้เพิ่มช่องลูกค้าเข้าไปในดิสคอร์ดด้วย
         if (payload.action === "withdraw") {
             fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
         }
