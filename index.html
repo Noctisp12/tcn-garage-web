@@ -71,7 +71,7 @@
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
         .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
-        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-image img { width: 100%; height: 100%; object-fit: contain; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -546,19 +546,10 @@
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
-            let rawOrder = log.order || "";
-            let customerName = "-";
+            // 🔥 ดึงชื่อลูกค้าที่ระบบหลังบ้านส่งแยกมาให้ 🔥
+            let customerName = log.customer && log.customer !== "" ? log.customer : "-";
             
-            if (rawOrder.includes("ลูกค้า:")) {
-                let lines = rawOrder.split('\n');
-                if(lines[0].includes("ลูกค้า:")) {
-                    customerName = lines[0].replace("ลูกค้า:", "").trim();
-                    lines.shift(); 
-                    rawOrder = lines.join('\n');
-                }
-            }
-
-            let cleanOrder = rawOrder.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
+            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
             let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
@@ -749,7 +740,8 @@
     }
 
     async function submitOrder() {
-        const userSelect = document.getElementById('userSelect'); const user = userSelect.options[userSelect.selectedIndex].value; 
+        const userSelect = document.getElementById('userSelect'); 
+        const user = userSelect.options[userSelect.selectedIndex].value; 
         const note = document.getElementById('noteInput').value;
         const customer = document.getElementById('customerInput').value.trim();
 
@@ -766,7 +758,16 @@
         let finalOrder = orderArr.join('\n'); 
         let currentAction = isAdminMode ? "restock" : "withdraw";
 
-        const payload = { name: user, customer: customer, order: finalOrder, note: note, total: total, cart: cart, action: currentAction };
+        // 🔥 ส่งข้อมูลแยกกันชัดเจน ไม่เอาชื่อลูกค้ายัดใส่ finalOrder แล้ว 🔥
+        const payload = { 
+            name: user, 
+            customer: customer, 
+            order: finalOrder, 
+            note: note, 
+            total: total, 
+            cart: cart, 
+            action: currentAction 
+        };
         
         let invoiceHtmlStr = generateInvoiceHTML(user, customer, note, currentAction);
 
