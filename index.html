@@ -307,7 +307,9 @@
 </div>
 
 <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
+    // 🔥 วางลิงก์ URL ของเถ้าแก่ที่ตรงนี้ (บรรทัด 372) 🔥
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
+    
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
     let isAdminMode = false;
@@ -322,12 +324,14 @@
     function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
 
     function sendDiscordWebhookToChannel(payload) {
+        // 🔥 เปลี่ยนลิงก์ Webhook ดิสคอร์ดของเถ้าแก่ตรงนี้ครับ 🔥
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1511627088522776699/1Kx_lvhi_aJe-r5PiNuNsVcAn8bvSyzwzB34iPEMQkf4EZ_JL3iRqCyZGVMAdLK6pOxN";
         if (!WEBHOOK_URL) return;
         
         let title = "🧾 [WITHDRAW] TCN GARAGE";
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
+        
         let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
@@ -335,9 +339,15 @@
         let garagePct = "80%";
 
         if (displayUser === "Scarlatt Chaos Rihanna" || displayUser === "Buckley Red Rihanna") {
-            mechShare = 0; garageShare = totalAmount; mechPct = "0%"; garagePct = "100%";
+            mechShare = 0;
+            garageShare = totalAmount;
+            mechPct = "0%";
+            garagePct = "100%";
         } else if (displayUser === "Daryl Fender") {
-            mechShare = totalAmount * 0.10; garageShare = totalAmount * 0.90; mechPct = "10%"; garagePct = "90%";
+            mechShare = totalAmount * 0.10;
+            garageShare = totalAmount * 0.90;
+            mechPct = "10%";
+            garagePct = "90%";
         }
 
         let block = String.fromCharCode(96, 96, 96);
@@ -345,7 +355,8 @@
         let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
 
         if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
-            title = "🧪 [SYSTEM] ทดสอบระบบ"; color = 16711935;
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; 
+            color = 16711935;
         } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
@@ -359,13 +370,25 @@
             detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง ("+mechPct+"): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ ("+garagePct+"): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         }
 
-        let fields = [{ name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }];
-        if (payload.action === "withdraw") fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
+        let fields = [
+            { name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }
+        ];
+
+        if (payload.action === "withdraw") {
+            fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
+        }
+
         fields.push({ name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true });
         fields.push({ name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false });
         fields.push({ name: "🛠️ รายละเอียด", value: detailValue, inline: false });
 
-        let embed = { title: title, color: color, fields: fields, timestamp: new Date().toISOString(), footer: { text: "TCN OS v9.0 • System Log" } };
+        let embed = {
+            title: title,
+            color: color,
+            fields: fields,
+            timestamp: new Date().toISOString(),
+            footer: { text: "TCN OS v9.0 • System Log" }
+        };
 
         let formData = new FormData();
         formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
@@ -454,12 +477,13 @@
         }
     }
 
+    // 🔥 ระบบเช็กสต็อกอมตะแบบเนียนกริ๊บ 100% 🔥
     function getDisplayStock(itemName) {
         let item = itemsData.find(i => i.name === itemName);
         if (!item) return 0;
-        if (item.stock === "unlimited") return "unlimited";
+        if (item.stock === "unlimited") return "unlimited"; // เช็กว่าเป็นอมตะไหม
         let cartQty = cart[itemName] || 0;
-        return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
+        return isAdminMode ? (item.stock === "unlimited" ? "unlimited" : item.stock + cartQty) : (item.stock === "unlimited" ? "unlimited" : item.stock - cartQty);
     }
 
     function renderItems(category, searchQuery = '') {
@@ -482,6 +506,7 @@
         let item = itemsData.find(i => i.name === name); 
         if (item) {
             let currentCartQty = cart[name] || 0;
+            // เช็กว่าเป็น unlimited ก็ให้เบิกได้รัวๆ เลย
             if(!isAdminMode && (item.stock === "unlimited" || (item.stock - currentCartQty) > 0)) { 
                 total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
             } else if (isAdminMode) { 
@@ -526,9 +551,9 @@
             }
 
             let rawOrder = log.order || "";
-            let customerName = log.customer && log.customer !== "" && log.customer !== "-" ? log.customer : "-";
+            let customerName = "-";
             
-            if (customerName === "-" && rawOrder.includes("ลูกค้า:")) {
+            if (rawOrder.includes("ลูกค้า:")) {
                 let lines = rawOrder.split('\n');
                 if(lines[0].includes("ลูกค้า:")) {
                     customerName = lines[0].replace("ลูกค้า:", "").trim();
