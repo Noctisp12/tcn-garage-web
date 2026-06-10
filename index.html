@@ -308,6 +308,42 @@
 </div>
 
 <script>
+    if (typeof Swal === 'undefined') {
+        window.Swal = {
+            fire: function(options) {
+                console.warn("Swal Guard Activated: SweetAlert2 is blocked. Gracefully fell back to native-rendered modal overlay.");
+                let overlay = document.getElementById('custom-swal-fallback');
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'custom-swal-fallback';
+                    overlay.style = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding: 20px;';
+                    document.body.appendChild(overlay);
+                }
+                overlay.innerHTML = `
+                    <div style="background:#141414; border:1px solid #D4AF37; padding:30px; border-radius:12px; max-width:420px; width:100%; text-align:center; box-shadow:0 0 25px rgba(212,175,55,0.4); animation: scaleUp 0.25s ease-out;">
+                        <h3 style="color:#D4AF37; margin-bottom:15px; font-size:18px; text-transform:uppercase; letter-spacing:1px;">${options.title || 'NOTIFICATION'}</h3>
+                        <div style="font-size:14px; color:#ccc; margin-bottom:20px; line-height:1.5; white-space:pre-line;">${options.text || options.html || ''}</div>
+                        ${options.showLoading ? '<div style="margin: 15px auto; width:35px; height:35px; border:4px solid #222; border-top:4px solid #D4AF37; border-radius:50%; animation: custom-spin 1s linear infinite;"></div>' : ''}
+                        ${!options.didOpen && !options.showLoading ? '<button onclick="document.getElementById(\'custom-swal-fallback\').remove()" style="background:#D4AF37; color:#000; border:none; padding:12px 25px; border-radius:6px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.2s;">ตกลง</button>' : ''}
+                    </div>
+                `;
+                if (!document.getElementById('custom-spin-style')) {
+                    let s = document.createElement('style');
+                    s.id = 'custom-spin-style';
+                    s.innerHTML = '@keyframes custom-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                    document.head.appendChild(s);
+                }
+                if (options.didOpen) options.didOpen();
+                return Promise.resolve({ isConfirmed: true });
+            },
+            close: function() {
+                let overlay = document.getElementById('custom-swal-fallback');
+                if (overlay) overlay.remove();
+            },
+            showLoading: function() {}
+        };
+    }
+
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
@@ -422,48 +458,52 @@
     }
 
     function parseDateString(dateStr) {
-        if (!dateStr) return new Date();
-        if (dateStr instanceof Date) return dateStr;
-        
-        let str = String(dateStr).trim();
-        if (str.includes('T')) {
-            let d = new Date(str);
-            if (!isNaN(d.getTime())) return d;
-        }
-        
-        let parts = str.split(/[\s,]+/);
-        if (parts.length > 0) {
-            let datePart = parts[0];
-            let dmy = datePart.split('/');
-            if (dmy.length === 3) {
-                let day = parseInt(dmy[0], 10);
-                let month = parseInt(dmy[1], 10) - 1;
-                let year = parseInt(dmy[2], 10);
-                
-                if (year > 2400) {
-                    year -= 543;
-                }
-                
-                let hours = 0, minutes = 0, seconds = 0;
-                if (parts.length > 1) {
-                    let timePart = parts[1];
-                    let hms = timePart.split(':');
-                    if (hms.length >= 2) {
-                        hours = parseInt(hms[0], 10);
-                        minutes = parseInt(hms[1], 10);
-                        if (hms.length > 2) {
-                            seconds = parseInt(hms[2], 10);
+        try {
+            if (!dateStr) return new Date();
+            if (dateStr instanceof Date) return dateStr;
+            
+            let str = String(dateStr).trim();
+            if (str.includes('T')) {
+                let d = new Date(str);
+                if (!isNaN(d.getTime())) return d;
+            }
+            
+            let parts = str.split(/[\s,]+/);
+            if (parts.length > 0) {
+                let datePart = parts[0];
+                let dmy = datePart.split('/');
+                if (dmy.length === 3) {
+                    let day = parseInt(dmy[0], 10);
+                    let month = parseInt(dmy[1], 10) - 1;
+                    let year = parseInt(dmy[2], 10);
+                    
+                    if (year > 2400) {
+                        year -= 543;
+                    }
+                    
+                    let hours = 0, minutes = 0, seconds = 0;
+                    if (parts.length > 1) {
+                        let timePart = parts[1];
+                        let hms = timePart.split(':');
+                        if (hms.length >= 2) {
+                            hours = parseInt(hms[0], 10);
+                            minutes = parseInt(hms[1], 10);
+                            if (hms.length > 2) {
+                                seconds = parseInt(hms[2], 10);
+                            }
                         }
                     }
+                    
+                    let parsedDate = new Date(year, month, day, hours, minutes, seconds);
+                    if (!isNaN(parsedDate.getTime())) return parsedDate;
                 }
-                
-                let parsedDate = new Date(year, month, day, hours, minutes, seconds);
-                if (!isNaN(parsedDate.getTime())) return parsedDate;
             }
+            
+            let fallback = new Date(str);
+            if (!isNaN(fallback.getTime())) return fallback;
+        } catch (e) {
+            console.error("Error parsing date:", e);
         }
-        
-        let fallback = new Date(str);
-        if (!isNaN(fallback.getTime())) return fallback;
         return new Date();
     }
 
@@ -478,20 +518,11 @@
             if (d) {
                 let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
                 if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
-            } else {
-                let rawDate = String(log.time).split(/[\s,]+/)[0];
-                if (rawDate && !uniqueDates.includes(rawDate)) { uniqueDates.push(rawDate); }
             }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
         
-        uniqueDates.sort((a, b) => {
-            let dateA = parseDateString(a) || new Date(0);
-            let dateB = parseDateString(b) || new Date(0);
-            return dateB.getTime() - dateA.getTime();
-        });
-
         uniqueDates.forEach((dateStr) => {
             let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
         });
@@ -896,8 +927,6 @@
             let logDateStr = "";
             if (logDate) {
                 logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            } else {
-                logDateStr = String(log.time).split(/[\s,]+/)[0];
             }
 
             if (logDateStr === filterValue) {
