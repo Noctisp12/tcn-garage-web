@@ -421,25 +421,76 @@
         }
     }
 
+    function parseDateString(dateStr) {
+        if (!dateStr) return new Date();
+        if (dateStr instanceof Date) return dateStr;
+        
+        let str = String(dateStr).trim();
+        if (str.includes('T')) {
+            let d = new Date(str);
+            if (!isNaN(d.getTime())) return d;
+        }
+        
+        let parts = str.split(/[\s,]+/);
+        if (parts.length > 0) {
+            let datePart = parts[0];
+            let dmy = datePart.split('/');
+            if (dmy.length === 3) {
+                let day = parseInt(dmy[0], 10);
+                let month = parseInt(dmy[1], 10) - 1;
+                let year = parseInt(dmy[2], 10);
+                
+                if (year > 2400) {
+                    year -= 543;
+                }
+                
+                let hours = 0, minutes = 0, seconds = 0;
+                if (parts.length > 1) {
+                    let timePart = parts[1];
+                    let hms = timePart.split(':');
+                    if (hms.length >= 2) {
+                        hours = parseInt(hms[0], 10);
+                        minutes = parseInt(hms[1], 10);
+                        if (hms.length > 2) {
+                            seconds = parseInt(hms[2], 10);
+                        }
+                    }
+                }
+                
+                let parsedDate = new Date(year, month, day, hours, minutes, seconds);
+                if (!isNaN(parsedDate.getTime())) return parsedDate;
+            }
+        }
+        
+        let fallback = new Date(str);
+        if (!isNaN(fallback.getTime())) return fallback;
+        return new Date();
+    }
+
     function populateTimeFilter() {
         const select = document.getElementById('timeFilter');
         select.innerHTML = '';
         let uniqueDates = [];
+        
         logsData.forEach(log => {
             if (!log.time) return;
             let d = parseDateString(log.time);
-            if (d instanceof Date && !isNaN(d.getTime())) {
+            if (d) {
                 let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
                 if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
             } else {
-                let rawDatePart = String(log.time).split(/[\s,]+/)[0];
-                if (rawDatePart && !uniqueDates.includes(rawDatePart)) { uniqueDates.push(rawDatePart); }
+                let rawDate = String(log.time).split(/[\s,]+/)[0];
+                if (rawDate && !uniqueDates.includes(rawDate)) { uniqueDates.push(rawDate); }
             }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
         
-        uniqueDates.sort((a, b) => parseDateString(b).getTime() - parseDateString(a).getTime());
+        uniqueDates.sort((a, b) => {
+            let dateA = parseDateString(a) || new Date(0);
+            let dateB = parseDateString(b) || new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        });
 
         uniqueDates.forEach((dateStr) => {
             let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
@@ -472,12 +523,8 @@
             teamLogs.slice(0, 20).forEach(log => {
                 let dateStr = "";
                 if (log.time) {
-                    let dateObj = new Date(log.time);
-                    if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
-                        dateStr = dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                    } else {
-                        dateStr = String(log.time);
-                    }
+                    let dateObj = parseDateString(log.time);
+                    dateStr = dateObj ? dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : String(log.time);
                 } else {
                     dateStr = "-";
                 }
@@ -565,12 +612,8 @@
         displayLogs.forEach(log => {
             let dateStr = "";
             if (log.time) {
-                let dateObj = new Date(log.time);
-                if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
-                    dateStr = dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                } else {
-                    dateStr = String(log.time);
-                }
+                let dateObj = parseDateString(log.time);
+                dateStr = dateObj ? dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : String(log.time);
             } else {
                 dateStr = "-";
             }
@@ -836,28 +879,6 @@
 
     function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
 
-    function parseDateString(dateStr) {
-        if (!dateStr) return new Date();
-        if (dateStr instanceof Date) return dateStr;
-        let parts = String(dateStr).split(/[\s,]+/);
-        let datePart = parts[0];
-        let dmy = datePart.split('/');
-        if (dmy.length === 3) {
-            let day = parseInt(dmy[0]);
-            let month = parseInt(dmy[1]) - 1;
-            let year = parseInt(dmy[2]);
-            if (year > 2400) {
-                year = year - 543;
-            }
-            return new Date(year, month, day);
-        }
-        let parsed = new Date(dateStr);
-        if (isNaN(parsed.getTime())) {
-            return new Date();
-        }
-        return parsed;
-    }
-
     function renderChart() {
         if (!logsData.length) return; 
         
@@ -873,7 +894,7 @@
             if (!log.time) return;
             let logDate = parseDateString(log.time);
             let logDateStr = "";
-            if (logDate instanceof Date && !isNaN(logDate.getTime())) {
+            if (logDate) {
                 logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
             } else {
                 logDateStr = String(log.time).split(/[\s,]+/)[0];
