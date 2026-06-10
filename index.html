@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCN Garage - Official Tablet</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             --bg-body: #080808; 
@@ -22,7 +24,9 @@
             --success: #39FF14;
             --cyan: #00CED1;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
         body { 
             background-color: var(--bg-body); 
             background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
@@ -32,12 +36,15 @@
             display: flex; justify-content: center; 
             min-height: 100vh; overflow-x: hidden;
         }
+
         body::before {
             content: ""; position: fixed; top: -20%; left: -10%; width: 120%; height: 120%;
             background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
             z-index: -1; pointer-events: none;
         }
+
         div.swal2-container { z-index: 9999 !important; }
+
         .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
         .status-bar .left { display: flex; gap: 15px; }
         .status-bar .right { display: flex; gap: 10px; align-items: center; }
@@ -45,51 +52,64 @@
         .battery-icon { width: 20px; height: 10px; border: 1px solid #aaa; border-radius: 2px; padding: 1px; position: relative; }
         .battery-icon::after { content: ''; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: #aaa; }
         .battery-level { height: 100%; width: 85%; background: var(--text-light); }
+
         .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
         .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
+        
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
+        
         .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
         .tabs { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
         .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
         .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
+        
         .search-box { max-width: 250px; }
         .search-box input { width: 100%; padding: 12px 15px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; transition: 0.3s; }
         .search-box input:focus { border-color: var(--gold-main); }
+        
         .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding-right: 5px;}
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
         .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
-        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-image img { width: 100%; height: 100%; object-fit: contain; }
         .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
+        
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
         .btn-add:hover { background: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
         .btn-add:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
         .btn-out { background-color: #b30000; color: #fff; opacity: 0.5; cursor: not-allowed; }
+        
         .brand { text-align: center; margin-bottom: 20px; flex-shrink: 0; cursor: pointer; border-radius: 8px; transition: 0.3s; padding: 10px; }
         .brand:hover { background: rgba(212, 175, 55, 0.1); border: 1px dashed var(--gold-main); }
         .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); transition: 0.3s;}
         .brand h1:hover { color: #fff; }
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
+
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
-        .sidebar select, .sidebar textarea, .sidebar input[type="text"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
-        .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus { border-color: var(--gold-main); }
+        .sidebar select, .sidebar textarea, .sidebar input[type="text"], .sidebar input[type="number"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
+        .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus, .sidebar input[type="number"]:focus { border-color: var(--gold-main); }
+        
         .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
         .sidebar-cart-item:last-child { border-bottom: none; }
         .sidebar-cart-item-info h5 { font-size: 13px; margin-bottom: 2px; color: #fff; }
         .sidebar-cart-item-info span { color: var(--gold-main); font-size: 12px; font-weight: bold; }
+        
         .sidebar-qty-control { display: flex; align-items: center; gap: 8px; }
         .sidebar-qty-btn { background: #222; border: 1px solid var(--border-color); color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        
         .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; transition: 0.3s; }
         .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
         .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
         .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
         .btn-submit:hover { background-color: var(--gold-hover); box-shadow: 0 0 15px var(--gold-glow); transform: translateY(-2px); }
+
         .history-container { display: none; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; animation: fadeIn 0.4s ease-out; backdrop-filter: blur(5px); }
         .history-container h2 { color: var(--gold-main); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -98,25 +118,32 @@
         .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
         .history-table td.total-col { font-weight: bold; }
         .history-table td:nth-child(1), .history-table td:nth-child(2), .history-table td:nth-child(3), .history-table td:nth-child(5) { white-space: nowrap; }
+
         .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; display: inline-block; white-space: nowrap; }
         .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--danger); font-size: 12px; display: inline-block; white-space: nowrap; }
+
         .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
         .app-modal.active { visibility: visible; opacity: 1; }
         .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 95%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
         .close-app { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; background: none; border: none; transition: 0.2s; }
         .close-app:hover { color: var(--danger); }
+        
         .filter-container { text-align: center; margin-bottom: 20px; }
         .filter-select { background: #222; color: var(--gold-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 5px; font-size: 14px; outline: none; cursor: pointer; font-weight: bold; }
         .filter-select:focus { border-color: var(--gold-main); }
+
         .exec-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .exec-card { flex: 1; min-width: 120px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
+        .exec-card { flex: 1; min-width: 140px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
         .exec-card span { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
-        .exec-card h3 { font-size: 20px; font-weight: bold; margin: 0; }
+        .exec-card h3 { font-size: 22px; font-weight: bold; margin: 0; }
+
         .mechanic-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
         .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; transition: 0.3s; border-left: 3px solid var(--gold-main); }
         .mechanic-stat-card:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); transform: translateY(-2px); }
+
         .team-history-scroll::-webkit-scrollbar { width: 6px; }
         .team-history-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.95); } to { transform: scale(1); } }
         @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
@@ -302,6 +329,7 @@
         let title = "🧾 [WITHDRAW] TCN GARAGE";
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
+        
         let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
@@ -375,9 +403,10 @@
     window.onload = function() { fetchStock(); };
 
     async function fetchStock() {
-        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อและอัปเดตข้อมูลล่าสุด...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
-            const response = await fetch(GOOGLE_SCRIPT_URL); 
+            const cacheBuster = GOOGLE_SCRIPT_URL.includes("?") ? "&t=" : "?t=";
+            const response = await fetch(GOOGLE_SCRIPT_URL + cacheBuster + new Date().getTime()); 
             const result = await response.json(); 
             if (result.status === "success") { 
                 itemsData = result.data; logsData = result.logs || []; 
@@ -397,15 +426,28 @@
         select.innerHTML = '';
         let uniqueDates = [];
         logsData.forEach(log => {
+            if (!log.time) return;
             let d = parseDateString(log.time);
-            let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            if (d instanceof Date && !isNaN(d.getTime())) {
+                let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            } else {
+                let rawDatePart = String(log.time).split(/[\s,]+/)[0];
+                if (rawDatePart && !uniqueDates.includes(rawDatePart)) { uniqueDates.push(rawDatePart); }
+            }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
+        
+        uniqueDates.sort((a, b) => parseDateString(b).getTime() - parseDateString(a).getTime());
+
         uniqueDates.forEach((dateStr) => {
             let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
         });
+        
+        if (select.options.length > 0) {
+            select.selectedIndex = 0;
+        }
     }
 
     function updateTeamFundBalance() {
@@ -428,12 +470,22 @@
             teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
         } else {
             teamLogs.slice(0, 20).forEach(log => {
-                const dateObj = new Date(log.time); 
-                const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                let dateStr = "";
+                if (log.time) {
+                    let dateObj = new Date(log.time);
+                    if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+                        dateStr = dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                    } else {
+                        dateStr = String(log.time);
+                    }
+                } else {
+                    dateStr = "-";
+                }
+                
                 let isDeposit = log.type.includes("ฝาก");
                 let statusBadge = isDeposit ? `<span style="color:var(--cyan);">📥 ฝาก</span>` : `<span style="color:#FF4500;">📤 เบิก</span>`;
                 let displayAmt = Number(log.total) || 0;
-                let cleanOrder = log.order.replace(/💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
+                let cleanOrder = String(log.order || '').replace(/💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
 
                 teamTbody.innerHTML += `
                     <tr style="border-bottom: 1px solid #222;">
@@ -455,6 +507,11 @@
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
     }
 
+    function searchItems(query) {
+        currentSearchQuery = query;
+        renderItems(currentCategory, query);
+    }
+
     function renderItems(category, searchQuery = '') {
         const container = document.getElementById('item-grid-container'); container.innerHTML = ''; currentSearchQuery = searchQuery; 
         const filteredItems = itemsData.filter(item => item.category === category && item.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -465,7 +522,7 @@
             
             let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
-            const fallback = `<span>NO IMG${item.name.substring(0, 3).toUpperCase()}</span>`;
+            const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
         });
@@ -506,22 +563,35 @@
         
         let displayLogs = garageLogs.slice(0, 30);
         displayLogs.forEach(log => {
-            const dateObj = new Date(log.time); 
-            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            let dateStr = "";
+            if (log.time) {
+                let dateObj = new Date(log.time);
+                if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+                    dateStr = dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                } else {
+                    dateStr = String(log.time);
+                }
+            } else {
+                dateStr = "-";
+            }
             
             let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
             let totalColor = `color: var(--gold-main);`; 
             
-            if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
+            let orderStr = String(log.order || '');
+            let typeStr = String(log.type || '');
+            let noteStr = String(log.note || '');
+            
+            if (typeStr === "🟢 เติมเข้า" || orderStr.includes("[เติมเข้า]")) {
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
-            } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
+            } else if (typeStr === "💰 เพิ่มงบ" || orderStr.includes("[เพิ่มงบ]") || orderStr.includes("[ทดสอบระบบ]")) {
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
             
-            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
-            let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
+            let cleanOrder = orderStr.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
+            let noteHtml = noteStr ? `<br><small style="color:var(--warning);">หมายเหตุ: ${noteStr}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
             tbody.innerHTML += `
@@ -703,7 +773,7 @@
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
         if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
         
-        let custHtml = actionType === "withdraw" && customer !== "" && customer !== "-" ? `<p style="margin: 5px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : '';
+        let custHtml = actionType === "withdraw" && customer !== "" ? `<p style="margin: 5px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : '';
 
         let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p>${custHtml}<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
         for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0; white-space: pre-line;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
@@ -767,10 +837,25 @@
     function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
 
     function parseDateString(dateStr) {
-        if (!dateStr) return new Date(); if (dateStr instanceof Date) return dateStr;
-        let parts = dateStr.split(/[\s,]+/); let datePart = parts[0]; let dmy = datePart.split('/');
-        if (dmy.length === 3) return new Date(parseInt(dmy[2]), parseInt(dmy[1]) - 1, parseInt(dmy[0]));
-        return new Date(dateStr);
+        if (!dateStr) return new Date();
+        if (dateStr instanceof Date) return dateStr;
+        let parts = String(dateStr).split(/[\s,]+/);
+        let datePart = parts[0];
+        let dmy = datePart.split('/');
+        if (dmy.length === 3) {
+            let day = parseInt(dmy[0]);
+            let month = parseInt(dmy[1]) - 1;
+            let year = parseInt(dmy[2]);
+            if (year > 2400) {
+                year = year - 543;
+            }
+            return new Date(year, month, day);
+        }
+        let parsed = new Date(dateStr);
+        if (isNaN(parsed.getTime())) {
+            return new Date();
+        }
+        return parsed;
     }
 
     function renderChart() {
@@ -785,16 +870,25 @@
         let totalIncome = 0; let totalExpense = 0; let totalAddedBudget = 0; let mechanicTotals = {};
 
         logsData.forEach(log => {
+            if (!log.time) return;
             let logDate = parseDateString(log.time);
-            let logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+            let logDateStr = "";
+            if (logDate instanceof Date && !isNaN(logDate.getTime())) {
+                logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+            } else {
+                logDateStr = String(log.time).split(/[\s,]+/)[0];
+            }
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
                 if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM" || log.mechanic === "TEST SYSTEM") return; 
                 
-                if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
+                let orderStr = String(log.order || '');
+                let typeStr = String(log.type || '');
+
+                if (typeStr === "🟢 เติมเข้า" || orderStr.includes("[เติมเข้า]")) {
                     totalExpense += amount;
-                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
+                } else if (typeStr === "💰 เพิ่มงบ" || orderStr.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
                 } else {
                     totalIncome += amount;
