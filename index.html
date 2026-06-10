@@ -5,35 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCN Garage - Official Tablet</title>
     
-    <script>
-        if (typeof Swal === 'undefined') {
-            window.Swal = {
-                fire: function(options) {
-                    let overlay = document.getElementById('custom-swal-fallback');
-                    if (!overlay) {
-                        overlay = document.createElement('div');
-                        overlay.id = 'custom-swal-fallback';
-                        overlay.style = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; display:flex; justify-content:center; align-items:center; color:#fff; font-family:sans-serif; padding: 20px;';
-                        document.body.appendChild(overlay);
-                    }
-                    overlay.innerHTML = `
-                        <div style="background:#141414; border:1px solid #D4AF37; padding:30px; border-radius:12px; max-width:420px; width:100%; text-align:center;">
-                            <h3 style="color:#D4AF37; margin-bottom:15px; font-size:18px;">${options.title || 'NOTIFICATION'}</h3>
-                            <div style="font-size:14px; color:#ccc; margin-bottom:20px;">${options.text || options.html || ''}</div>
-                            ${options.showLoading ? '<div>Loading...</div>' : '<button onclick="document.getElementById(\'custom-swal-fallback\').remove()" style="background:#D4AF37; color:#000; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">OK</button>'}
-                        </div>
-                    `;
-                    if (options.didOpen) options.didOpen();
-                    return Promise.resolve({ isConfirmed: true });
-                },
-                close: function() {
-                    let overlay = document.getElementById('custom-swal-fallback');
-                    if (overlay) overlay.remove();
-                },
-                showLoading: function() {}
-            };
-        }
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -121,8 +92,8 @@
         .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
 
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
-        .sidebar select, .sidebar textarea, .sidebar input[type="text"], .sidebar input[type="number"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
-        .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus, .sidebar input[type="number"]:focus { border-color: var(--gold-main); }
+        .sidebar select, .sidebar textarea, .sidebar input[type="text"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
+        .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus { border-color: var(--gold-main); }
         
         .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
@@ -161,7 +132,7 @@
         .filter-select { background: #222; color: var(--gold-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 5px; font-size: 14px; outline: none; cursor: pointer; font-weight: bold; }
         .filter-select:focus { border-color: var(--gold-main); }
 
-        .exec-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .exec-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
         .exec-card { flex: 1; min-width: 140px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
         .exec-card span { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
         .exec-card h3 { font-size: 22px; font-weight: bold; margin: 0; }
@@ -337,7 +308,7 @@
 </div>
 
 <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1mf83e518JvXRqTdzNorppxmH2Sk64hbC168yhN50YAptaNR38t4-lLNChpFj7sep/exec"; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
     let isAdminMode = false;
@@ -358,12 +329,33 @@
         let title = "🧾 [WITHDRAW] TCN GARAGE";
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
+        
+        let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
+        let mechPct = "20%";
+        let garagePct = "80%";
+
+        if (displayUser === "Scarlatt Chaos Rihanna" || displayUser === "Buckley Red Rihanna") {
+            mechShare = 0;
+            garageShare = totalAmount;
+            mechPct = "0%";
+            garagePct = "100%";
+        } else if (displayUser === "Daryl Fender") {
+            mechShare = totalAmount * 0.10;
+            garageShare = totalAmount * 0.90;
+            mechPct = "10%";
+            garagePct = "90%";
+        }
+
         let block = String.fromCharCode(96, 96, 96);
         let detailValue = block + "text\n" + payload.order + "\n" + block;
+        let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
 
-        if (payload.action === "restock") {
+        if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; 
+            color = 16711935;
+        } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
             title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
@@ -373,18 +365,25 @@
             title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
         } else {
             title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
-            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง (20%): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ (80%): $" + garageShare.toLocaleString('en-US') + "\n" + block;
+            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง ("+mechPct+"): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ ("+garagePct+"): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         }
+
+        let fields = [
+            { name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }
+        ];
+
+        if (payload.action === "withdraw") {
+            fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
+        }
+
+        fields.push({ name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true });
+        fields.push({ name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false });
+        fields.push({ name: "🛠️ รายละเอียด", value: detailValue, inline: false });
 
         let embed = {
             title: title,
             color: color,
-            fields: [
-                { name: "👤 ผู้ทำรายการ", value: payload.name.replace(/_/g, ' '), inline: true },
-                { name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true },
-                { name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false },
-                { name: "🛠️ รายละเอียด", value: detailValue, inline: false }
-            ],
+            fields: fields,
             timestamp: new Date().toISOString(),
             footer: { text: "TCN OS v8.9 • System Log" }
         };
@@ -404,10 +403,9 @@
     window.onload = function() { fetchStock(); };
 
     async function fetchStock() {
-        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อและอัปเดตข้อมูลล่าสุด...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
-            const cacheBuster = GOOGLE_SCRIPT_URL.includes("?") ? "&t=" : "?t=";
-            const response = await fetch(GOOGLE_SCRIPT_URL + cacheBuster + new Date().getTime()); 
+            const response = await fetch(GOOGLE_SCRIPT_URL); 
             const result = await response.json(); 
             if (result.status === "success") { 
                 itemsData = result.data; logsData = result.logs || []; 
@@ -422,79 +420,20 @@
         }
     }
 
-    function parseDateString(dateStr) {
-        try {
-            if (!dateStr) return new Date();
-            if (dateStr instanceof Date) return dateStr;
-            
-            let str = String(dateStr).trim();
-            if (str.includes('T')) {
-                let d = new Date(str);
-                if (!isNaN(d.getTime())) return d;
-            }
-            
-            let parts = str.split(/[\s,]+/);
-            if (parts.length > 0) {
-                let datePart = parts[0];
-                let dmy = datePart.split('/');
-                if (dmy.length === 3) {
-                    let day = parseInt(dmy[0], 10);
-                    let month = parseInt(dmy[1], 10) - 1;
-                    let year = parseInt(dmy[2], 10);
-                    
-                    if (year > 2400) {
-                        year -= 543;
-                    }
-                    
-                    let hours = 0, minutes = 0, seconds = 0;
-                    if (parts.length > 1) {
-                        let timePart = parts[1];
-                        let hms = timePart.split(':');
-                        if (hms.length >= 2) {
-                            hours = parseInt(hms[0], 10);
-                            minutes = parseInt(hms[1], 10);
-                            if (hms.length > 2) {
-                                seconds = parseInt(hms[2], 10);
-                            }
-                        }
-                    }
-                    
-                    let parsedDate = new Date(year, month, day, hours, minutes, seconds);
-                    if (!isNaN(parsedDate.getTime())) return parsedDate;
-                }
-            }
-            
-            let fallback = new Date(str);
-            if (!isNaN(fallback.getTime())) return fallback;
-        } catch(e) {
-            console.error("Error parsing date:", e);
-        }
-        return new Date();
-    }
-
     function populateTimeFilter() {
         const select = document.getElementById('timeFilter');
         select.innerHTML = '';
         let uniqueDates = [];
-        
         logsData.forEach(log => {
-            if (!log.time) return;
             let d = parseDateString(log.time);
-            if (d) {
-                let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-                if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
-            }
+            let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+            if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
-        
         uniqueDates.forEach((dateStr) => {
             let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
         });
-        
-        if (select.options.length > 0) {
-            select.selectedIndex = 0;
-        }
     }
 
     function updateTeamFundBalance() {
@@ -517,18 +456,12 @@
             teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
         } else {
             teamLogs.slice(0, 20).forEach(log => {
-                let dateStr = "";
-                if (log.time) {
-                    let dateObj = parseDateString(log.time);
-                    dateStr = dateObj ? dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : String(log.time);
-                } else {
-                    dateStr = "-";
-                }
-                
+                const dateObj = new Date(log.time); 
+                const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
                 let isDeposit = log.type.includes("ฝาก");
                 let statusBadge = isDeposit ? `<span style="color:var(--cyan);">📥 ฝาก</span>` : `<span style="color:#FF4500;">📤 เบิก</span>`;
                 let displayAmt = Number(log.total) || 0;
-                let cleanOrder = String(log.order || '').replace(/💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
+                let cleanOrder = log.order.replace(/💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
 
                 teamTbody.innerHTML += `
                     <tr style="border-bottom: 1px solid #222;">
@@ -550,18 +483,13 @@
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
     }
 
-    function searchItems(query) {
-        currentSearchQuery = query;
-        renderItems(currentCategory, query);
-    }
-
     function renderItems(category, searchQuery = '') {
         const container = document.getElementById('item-grid-container'); container.innerHTML = ''; currentSearchQuery = searchQuery; 
         const filteredItems = itemsData.filter(item => item.category === category && item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
         filteredItems.forEach(item => {
             let currentDisplayStock = getDisplayStock(item.name);
-            let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock" style="color: var(--text-muted);">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
+            let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
             
             let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
             
@@ -606,31 +534,23 @@
         
         let displayLogs = garageLogs.slice(0, 30);
         displayLogs.forEach(log => {
-            let dateStr = "";
-            if (log.time) {
-                let dateObj = parseDateString(log.time);
-                dateStr = dateObj ? dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : String(log.time);
-            } else {
-                dateStr = "-";
-            }
+            const dateObj = new Date(log.time); 
+            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             
             let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
             let totalColor = `color: var(--gold-main);`; 
             
-            let orderStr = String(log.order || '');
-            let typeStr = String(log.type || '');
-            let noteStr = String(log.note || '');
-            
-            if (typeStr === "🟢 เติมเข้า" || orderStr.includes("[เติมเข้า]")) {
+            if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
-            } else if (typeStr === "💰 เพิ่มงบ" || orderStr.includes("[เพิ่มงบ]") || orderStr.includes("[ทดสอบระบบ]")) {
+            } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
+            // 🔥 ดึงชื่อลูกค้าที่ระบบหลังบ้านส่งแยกมาให้ 🔥
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
             
-            let cleanOrder = orderStr.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
-            let noteHtml = noteStr ? `<br><small style="color:var(--warning);">หมายเหตุ: ${noteStr}</small>` : '';
+            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
+            let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
 
             tbody.innerHTML += `
@@ -838,6 +758,7 @@
         let finalOrder = orderArr.join('\n'); 
         let currentAction = isAdminMode ? "restock" : "withdraw";
 
+        // 🔥 ส่งข้อมูลแยกกันชัดเจน ไม่เอาชื่อลูกค้ายัดใส่ finalOrder แล้ว 🔥
         const payload = { 
             name: user, 
             customer: customer, 
@@ -876,49 +797,10 @@
     function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
 
     function parseDateString(dateStr) {
-        if (!dateStr) return new Date();
-        if (dateStr instanceof Date) return dateStr;
-        
-        let str = String(dateStr).trim();
-        if (str.includes('T')) {
-            let d = new Date(str);
-            if (!isNaN(d.getTime())) return d;
-        }
-        
-        let parts = str.split(/[\s,]+/);
-        if (parts.length > 0) {
-            let datePart = parts[0];
-            let dmy = datePart.split('/');
-            if (dmy.length === 3) {
-                let day = parseInt(dmy[0], 10);
-                let month = parseInt(dmy[1], 10) - 1;
-                let year = parseInt(dmy[2], 10);
-                
-                if (year > 2400) {
-                    year -= 543;
-                }
-                
-                let hours = 0, minutes = 0, seconds = 0;
-                if (parts.length > 1) {
-                    let timePart = parts[1];
-                    let hms = timePart.split(':');
-                    if (hms.length >= 2) {
-                        hours = parseInt(hms[0], 10);
-                        minutes = parseInt(hms[1], 10);
-                        if (hms.length > 2) {
-                            seconds = parseInt(hms[2], 10);
-                        }
-                    }
-                }
-                
-                let parsedDate = new Date(year, month, day, hours, minutes, seconds);
-                if (!isNaN(parsedDate.getTime())) return parsedDate;
-            }
-        }
-        
-        let fallback = new Date(str);
-        if (!isNaN(fallback.getTime())) return fallback;
-        return new Date();
+        if (!dateStr) return new Date(); if (dateStr instanceof Date) return dateStr;
+        let parts = dateStr.split(/[\s,]+/); let datePart = parts[0]; let dmy = datePart.split('/');
+        if (dmy.length === 3) return new Date(parseInt(dmy[2]), parseInt(dmy[1]) - 1, parseInt(dmy[0]));
+        return new Date(dateStr);
     }
 
     function renderChart() {
@@ -934,21 +816,15 @@
 
         logsData.forEach(log => {
             let logDate = parseDateString(log.time);
-            let logDateStr = "";
-            if (logDate) {
-                logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            }
+            let logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
                 if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM" || log.mechanic === "TEST SYSTEM") return; 
                 
-                let orderStr = String(log.order || '');
-                let typeStr = String(log.type || '');
-
-                if (typeStr === "🟢 เติมเข้า" || orderStr.includes("[เติมเข้า]")) {
+                if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
-                } else if (typeStr === "💰 เพิ่มงบ" || orderStr.includes("[เพิ่มงบ]")) {
+                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
                 } else {
                     totalIncome += amount;
