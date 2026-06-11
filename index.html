@@ -402,12 +402,10 @@
 
     window.onload = function() { fetchStock(); };
 
-    // 🔥 1. เพิ่มระบบทำลาย Cache ตรงนี้ เพื่อบังคับให้ดึงข้อมูลใหม่ทุกครั้ง 🔥
     async function fetchStock() {
         Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
         try { 
-            const cacheBuster = "?t=" + new Date().getTime();
-            const response = await fetch(GOOGLE_SCRIPT_URL + cacheBuster); 
+            const response = await fetch(GOOGLE_SCRIPT_URL); 
             const result = await response.json(); 
             if (result.status === "success") { 
                 itemsData = result.data; logsData = result.logs || []; 
@@ -420,47 +418,6 @@
         } catch (error) { 
             Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: error.message || '', background: '#141414', color: '#fff' }); 
         }
-    }
-
-    // 🔥 2. แก้ไขระบบแปลงปี พ.ศ. 2569 เป็น ค.ศ. อัตโนมัติ ป้องกันกราฟยอดรวมพัง 🔥
-    function parseDateString(dateStr) {
-        if (!dateStr) return new Date(); 
-        if (dateStr instanceof Date) return dateStr;
-        
-        let str = String(dateStr).trim().replace(/,/g, '');
-        if (str.includes('T')) {
-            let d = new Date(str);
-            if (!isNaN(d.getTime())) return d;
-        }
-        
-        let parts = str.split(/[\s]+/);
-        if (parts.length > 0) {
-            let datePart = parts[0];
-            let dmy = datePart.split('/');
-            if (dmy.length === 3) {
-                let day = parseInt(dmy[0], 10);
-                let month = parseInt(dmy[1], 10) - 1;
-                let year = parseInt(dmy[2], 10);
-                
-                if (year > 2400) year -= 543; // ถ้ารับปี 2569 มา จะลบให้เหลือ 2026 อัตโนมัติ
-                
-                let hours = 0, minutes = 0, seconds = 0;
-                if (parts.length > 1) {
-                    let timePart = parts[1];
-                    let hms = timePart.split(':');
-                    if (hms.length >= 2) {
-                        hours = parseInt(hms[0], 10);
-                        minutes = parseInt(hms[1], 10);
-                        if (hms.length > 2) seconds = parseInt(hms[2], 10);
-                    }
-                }
-                let parsedDate = new Date(year, month, day, hours, minutes, seconds);
-                if (!isNaN(parsedDate.getTime())) return parsedDate;
-            }
-        }
-        let fallback = new Date(str);
-        if (!isNaN(fallback.getTime())) return fallback;
-        return new Date();
     }
 
     function populateTimeFilter() {
@@ -499,8 +456,8 @@
             teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
         } else {
             teamLogs.slice(0, 20).forEach(log => {
-                let dateObj = parseDateString(log.time); 
-                let dateStr = isNaN(dateObj.getTime()) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                const dateObj = new Date(log.time); 
+                const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
                 let isDeposit = log.type.includes("ฝาก");
                 let statusBadge = isDeposit ? `<span style="color:var(--cyan);">📥 ฝาก</span>` : `<span style="color:#FF4500;">📤 เบิก</span>`;
                 let displayAmt = Number(log.total) || 0;
@@ -524,11 +481,6 @@
         if (item.stock === "unlimited") return "unlimited";
         let cartQty = cart[itemName] || 0;
         return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
-    }
-
-    function searchItems(query) {
-        currentSearchQuery = query;
-        renderItems(currentCategory, query);
     }
 
     function renderItems(category, searchQuery = '') {
@@ -582,8 +534,8 @@
         
         let displayLogs = garageLogs.slice(0, 30);
         displayLogs.forEach(log => {
-            let dateObj = parseDateString(log.time); 
-            let dateStr = isNaN(dateObj.getTime()) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            const dateObj = new Date(log.time); 
+            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
             
             let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
             let totalColor = `color: var(--gold-main);`; 
@@ -594,6 +546,7 @@
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
+            // 🔥 ดึงชื่อลูกค้าที่ระบบหลังบ้านส่งแยกมาให้ 🔥
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
             
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
@@ -805,6 +758,7 @@
         let finalOrder = orderArr.join('\n'); 
         let currentAction = isAdminMode ? "restock" : "withdraw";
 
+        // 🔥 ส่งข้อมูลแยกกันชัดเจน ไม่เอาชื่อลูกค้ายัดใส่ finalOrder แล้ว 🔥
         const payload = { 
             name: user, 
             customer: customer, 
@@ -842,6 +796,13 @@
 
     function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
 
+    function parseDateString(dateStr) {
+        if (!dateStr) return new Date(); if (dateStr instanceof Date) return dateStr;
+        let parts = dateStr.split(/[\s,]+/); let datePart = parts[0]; let dmy = datePart.split('/');
+        if (dmy.length === 3) return new Date(parseInt(dmy[2]), parseInt(dmy[1]) - 1, parseInt(dmy[0]));
+        return new Date(dateStr);
+    }
+
     function renderChart() {
         if (!logsData.length) return; 
         
@@ -854,23 +815,16 @@
         let totalIncome = 0; let totalExpense = 0; let totalAddedBudget = 0; let mechanicTotals = {};
 
         logsData.forEach(log => {
-            if (!log.time) return;
             let logDate = parseDateString(log.time);
-            let logDateStr = "";
-            if (logDate && !isNaN(logDate.getTime())) {
-                logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            }
+            let logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 
             if (logDateStr === filterValue) {
                 let amount = Number(log.total) || 0;
                 if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM" || log.mechanic === "TEST SYSTEM") return; 
                 
-                let orderStr = String(log.order || '');
-                let typeStr = String(log.type || '');
-
-                if (typeStr === "🟢 เติมเข้า" || orderStr.includes("[เติมเข้า]")) {
+                if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                     totalExpense += amount;
-                } else if (typeStr === "💰 เพิ่มงบ" || orderStr.includes("[เพิ่มงบ]")) {
+                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
                     totalAddedBudget += amount;
                 } else {
                     totalIncome += amount;
