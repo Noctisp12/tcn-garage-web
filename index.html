@@ -312,6 +312,7 @@
     let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
     let isAdminMode = false;
+    window.exactTeamBalance = 0; // เพิ่มบรรทัดนี้
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
@@ -409,6 +410,7 @@
             const result = await response.json(); 
             if (result.status === "success") { 
                 itemsData = result.data; logsData = result.logs || []; 
+                window.exactTeamBalance = result.teamBalance || 0; // อัปเดตยอดทีมจากฝั่งชีตตรงนี้!
                 populateTimeFilter(); 
                 renderItems(currentCategory); 
                 updateTeamFundBalance(); 
@@ -437,20 +439,12 @@
     }
 
     function updateTeamFundBalance() {
-        let teamIn = 0; let teamOut = 0;
+        // ใช้ยอด exactTeamBalance ที่ส่งมาจากชีตหลังบ้าน (แม่นยำ 100%)
+        document.getElementById('teamBalanceAmount').innerText = (window.exactTeamBalance || 0).toLocaleString();
+
         const teamTbody = document.getElementById('team-history-body');
         teamTbody.innerHTML = '';
-        
         let teamLogs = logsData.filter(log => log.mechanic === "TEAM");
-        
-        teamLogs.forEach(log => {
-            let amt = Number(log.total) || 0;
-            if (log.type.includes("ฝาก")) { teamIn += amt; } 
-            else if (log.type.includes("เบิก")) { teamOut += amt; }
-        });
-
-        let balance = teamIn - teamOut;
-        document.getElementById('teamBalanceAmount').innerText = balance.toLocaleString();
 
         if (teamLogs.length === 0) {
             teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
@@ -546,7 +540,6 @@
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
             }
 
-            // 🔥 ดึงชื่อลูกค้าที่ระบบหลังบ้านส่งแยกมาให้ 🔥
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
             
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
@@ -651,8 +644,8 @@
         let noteInput = document.getElementById('teamNoteInput').value;
         let amt = Number(amtInput);
 
-        let currentBalStr = document.getElementById('teamBalanceAmount').innerText.replace(/,/g, '');
-        let currentBal = Number(currentBalStr);
+        // ดึงจากค่า window.exactTeamBalance โดยตรง
+        let currentBal = window.exactTeamBalance || 0;
 
         if (amt <= 0) {
             playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
@@ -758,7 +751,6 @@
         let finalOrder = orderArr.join('\n'); 
         let currentAction = isAdminMode ? "restock" : "withdraw";
 
-        // 🔥 ส่งข้อมูลแยกกันชัดเจน ไม่เอาชื่อลูกค้ายัดใส่ finalOrder แล้ว 🔥
         const payload = { 
             name: user, 
             customer: customer, 
