@@ -1,466 +1,903 @@
-var SHEET_LOG = "Log";
-var SHEET_STOCK = "Stock";
-var SHEET_PAYROLL = "Payroll"; 
-var SHEET_TEAM_LOG = "TeamLog"; 
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCN Garage - Official Tablet</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-function doGet(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var stockSheet = ss.getSheetByName(SHEET_STOCK);
-  var logSheet = ss.getSheetByName(SHEET_LOG);
-  var teamLogSheet = ss.getSheetByName(SHEET_TEAM_LOG); 
-  
-  if (!stockSheet) {
-    return ContentService.createTextOutput(JSON.stringify({status: "error", message: "ไม่พบแผ่นงานชื่อ Stock"})).setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  var stockData = stockSheet.getDataRange().getValues();
-  var items = [];
-  for (var i = 1; i < stockData.length; i++) {
-    if (stockData[i][0] !== "") {
-      var rawStock = stockData[i][2];
-      var finalStock = rawStock;
-      if (rawStock === "-" || rawStock === "∞" || rawStock === "" || isNaN(rawStock)) {
-          finalStock = "unlimited";
-      }
-
-      items.push({
-        name: stockData[i][0], price: stockData[i][1], stock: finalStock, category: stockData[i][3], image: stockData[i][4]
-      });
-    }
-  }
-
-  var logs = [];
-  if (logSheet) {
-    var logData = logSheet.getDataRange().getValues();
-    for (var j = 1; j < logData.length; j++) {
-      if (logData[j][0] !== "" && logData[j][1] !== "TEAM") { 
-        var income = logData[j][4];
-        var expense = logData[j][5];
-        var displayTotal = (income !== "" && income > 0) ? income : expense;
-        var logType = (logData[j].length > 8 && logData[j][8]) ? String(logData[j][8]) : "";
-        
-        var customerLog = (logData[j].length > 9 && logData[j][9]) ? String(logData[j][9]) : "";
-
-        var timeStr = logData[j][0];
-        if (Object.prototype.toString.call(timeStr) === '[object Date]') {
-          timeStr = Utilities.formatDate(timeStr, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+    <style>
+        :root {
+            --bg-body: #080808; 
+            --bg-panel: #141414;
+            --bg-input: #1f1f1f;
+            --gold-main: #D4AF37;
+            --gold-glow: rgba(212, 175, 55, 0.3);
+            --gold-hover: #F3E5AB;
+            --text-light: #f5f5f5;
+            --text-muted: #888888;
+            --border-color: #2a2a2a;
+            --danger: #ff4d4d;
+            --warning: #ff9900;
+            --success: #39FF14;
+            --cyan: #00CED1;
         }
 
-        logs.push({
-          time: timeStr, mechanic: logData[j][1], order: logData[j][2], note: logData[j][3], total: displayTotal || 0, type: logType, customer: customerLog 
-        });
-      }
-    }
-  }
-
-  var exactTeamBalance = 0; 
-  if (teamLogSheet) {
-    var tData = teamLogSheet.getDataRange().getValues();
-    for (var t = 1; t < tData.length; t++) {
-      if (tData[t][0] !== "") {
-        var act = String(tData[t][1]);
-        var amt = parseFloat(tData[t][3]) || 0;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        if (act.indexOf("ฝาก") !== -1) exactTeamBalance += amt;
-        if (act.indexOf("เบิก") !== -1) exactTeamBalance -= amt;
-
-        var tTimeStr = tData[t][0];
-        if (Object.prototype.toString.call(tTimeStr) === '[object Date]') {
-          tTimeStr = Utilities.formatDate(tTimeStr, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+        body { 
+            background-color: var(--bg-body); 
+            background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px; 
+            color: var(--text-light); 
+            padding: 40px 20px 20px 20px; 
+            display: flex; justify-content: center; 
+            min-height: 100vh; overflow-x: hidden;
         }
-        logs.push({
-          time: tTimeStr, mechanic: "TEAM", order: tData[t][1], note: tData[t][2], total: tData[t][3], type: act, customer: "-"
-        });
-      }
-    }
-  }
 
-  logs.sort(function(a, b) {
-    function parseD(dStr) {
-       var parts = dStr.split(" ");
-       var dmy = parts[0].split("/");
-       if(dmy.length!==3) return 0;
-       var t = parts[1] ? parts[1].split(":") : [0,0,0];
-       return new Date(dmy[2], dmy[1]-1, dmy[0], t[0], t[1], t[2]).getTime();
-    }
-    return parseD(b.time) - parseD(a.time);
-  });
+        body::before {
+            content: ""; position: fixed; top: -20%; left: -10%; width: 120%; height: 120%;
+            background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+            z-index: -1; pointer-events: none;
+        }
 
-  return ContentService.createTextOutput(JSON.stringify({
-      status: "success", 
-      data: items, 
-      logs: logs.slice(0, 150),
-      teamBalance: exactTeamBalance 
-  })).setMimeType(ContentService.MimeType.JSON);
-}
+        div.swal2-container { z-index: 9999 !important; }
 
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(10000)) {
-    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": "ระบบกำลังยุ่ง กรุณารอสักครู่แล้วกดทำรายการใหม่อีกครั้ง"})).setMimeType(ContentService.MimeType.JSON);
-  }
+        .status-bar { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background-color: #000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; color: #aaa; z-index: 1000; border-bottom: 1px solid #222; user-select: none; }
+        .status-bar .left { display: flex; gap: 15px; }
+        .status-bar .right { display: flex; gap: 10px; align-items: center; }
+        .battery { display: flex; align-items: center; gap: 3px; }
+        .battery-icon { width: 20px; height: 10px; border: 1px solid #aaa; border-radius: 2px; padding: 1px; position: relative; }
+        .battery-icon::after { content: ''; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: #aaa; }
+        .battery-level { height: 100%; width: 85%; background: var(--text-light); }
 
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var logSheet = ss.getSheetByName(SHEET_LOG);
-    var stockSheet = ss.getSheetByName(SHEET_STOCK);
-    var teamLogSheet = ss.getSheetByName(SHEET_TEAM_LOG);
-    
-    var payload = JSON.parse(e.postData.contents);
-    var timestamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
-    var action = payload.action || "withdraw"; 
-    
-    if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
-       updatePayrollSheet(ss);
-       SpreadsheetApp.flush();
-       return ContentService.createTextOutput(JSON.stringify({"status": "success", "message": "รีเฟรชชีตสำเร็จ"})).setMimeType(ContentService.MimeType.JSON);
-    }
+        .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
+        .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
+        
+        .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
+        
+        .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
+        .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
+        .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
+        
+        .search-box { max-width: 250px; }
+        .search-box input { width: 100%; padding: 12px 15px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; transition: 0.3s; }
+        .search-box input:focus { border-color: var(--gold-main); }
+        
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding-right: 5px;}
+        .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
+        .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
+        .item-image { height: 140px; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 14px; text-align: center; position: relative; }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .item-info h4 { font-size: 16px; color: var(--text-light); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price-stock { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
+        .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
+        
+        .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
+        .btn-add:hover { background: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
+        .btn-add:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
+        .btn-out { background-color: #b30000; color: #fff; opacity: 0.5; cursor: not-allowed; }
+        
+        .brand { text-align: center; margin-bottom: 20px; flex-shrink: 0; cursor: pointer; border-radius: 8px; transition: 0.3s; padding: 10px; }
+        .brand:hover { background: rgba(212, 175, 55, 0.1); border: 1px dashed var(--gold-main); }
+        .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); transition: 0.3s;}
+        .brand h1:hover { color: #fff; }
+        .brand p { color: var(--text-muted); font-size: 12px; margin-top: 5px; }
 
-    if (logSheet.getMaxColumns() >= 11) {
-        logSheet.getRange(1, 11, logSheet.getMaxRows(), logSheet.getMaxColumns() - 10).clear();
-    }
+        .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
+        .sidebar select, .sidebar textarea, .sidebar input[type="text"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
+        .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus { border-color: var(--gold-main); }
+        
+        .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
+        .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
+        .sidebar-cart-item:last-child { border-bottom: none; }
+        .sidebar-cart-item-info h5 { font-size: 13px; margin-bottom: 2px; color: #fff; }
+        .sidebar-cart-item-info span { color: var(--gold-main); font-size: 12px; font-weight: bold; }
+        
+        .sidebar-qty-control { display: flex; align-items: center; gap: 8px; }
+        .sidebar-qty-btn { background: #222; border: 1px solid var(--border-color); color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        
+        .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; transition: 0.3s; }
+        .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
+        .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
+        .btn-submit { background-color: var(--gold-main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+        .btn-submit:hover { background-color: var(--gold-hover); box-shadow: 0 0 15px var(--gold-glow); transform: translateY(-2px); }
 
-    if (action === "add_team_fund" || action === "withdraw_team_fund") {
-       if (!teamLogSheet) {
-         teamLogSheet = ss.insertSheet(SHEET_TEAM_LOG);
-         teamLogSheet.appendRow(["TIME", "Action", "Note", "Amount", "Balance"]);
-         teamLogSheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#00CED1").setFontColor("black");
-       } else {
-         if (teamLogSheet.getRange(1, 5).getValue() === "") {
-             teamLogSheet.getRange(1, 5).setValue("Balance").setFontWeight("bold").setBackground("#00CED1").setFontColor("black");
-         }
-       }
+        .history-container { display: none; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; animation: fadeIn 0.4s ease-out; backdrop-filter: blur(5px); }
+        .history-container h2 { color: var(--gold-main); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #222; vertical-align: top; }
+        .history-table th { color: var(--gold-main); background: rgba(0,0,0,0.5); font-weight: bold; white-space: nowrap; }
+        .history-table tr:hover { background: rgba(212, 175, 55, 0.05); }
+        .history-table td.total-col { font-weight: bold; }
+        .history-table td:nth-child(1), .history-table td:nth-child(2), .history-table td:nth-child(3), .history-table td:nth-child(5) { white-space: nowrap; }
 
-       var tData = teamLogSheet.getDataRange().getValues();
-       var currentBalance = 0;
-       for (var t = 1; t < tData.length; t++) {
-         var act = String(tData[t][1]);
-         var pastAmt = parseFloat(tData[t][3]) || 0;
-         if (act.indexOf("ฝาก") !== -1) currentBalance += pastAmt;
-         if (act.indexOf("เบิก") !== -1) currentBalance -= pastAmt;
-       }
+        .badge-withdraw { background: rgba(212, 175, 55, 0.1); color: var(--gold-main); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gold-main); font-size: 12px; display: inline-block; white-space: nowrap; }
+        .badge-restock { background: rgba(57, 255, 20, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--danger); font-size: 12px; display: inline-block; white-space: nowrap; }
 
-       if (action === "withdraw_team_fund" && payload.total > currentBalance) {
-           throw new Error("เงินกองกลางทีมไม่พอให้เบิก! (คงเหลือ $" + currentBalance + ")");
-       }
+        .app-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: 0.3s; }
+        .app-modal.active { visibility: visible; opacity: 1; }
+        .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 95%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
+        .close-app { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; background: none; border: none; transition: 0.2s; }
+        .close-app:hover { color: var(--danger); }
+        
+        .filter-container { text-align: center; margin-bottom: 20px; }
+        .filter-select { background: #222; color: var(--gold-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 5px; font-size: 14px; outline: none; cursor: pointer; font-weight: bold; }
+        .filter-select:focus { border-color: var(--gold-main); }
 
-       var tLabel = (action === "add_team_fund") ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]";
-       var newBalance = (action === "add_team_fund") ? currentBalance + payload.total : currentBalance - payload.total;
-       
-       teamLogSheet.appendRow([timestamp, tLabel, payload.note, payload.total, newBalance]);
+        .exec-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .exec-card { flex: 1; min-width: 140px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
+        .exec-card span { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
+        .exec-card h3 { font-size: 22px; font-weight: bold; margin: 0; }
 
-    } else {
-       var Avals = logSheet.getRange("A:A").getValues();
-       var lastRow = 2; 
-       for (var r = Avals.length - 1; r >= 0; r--) {
-         if (Avals[r][0] && Avals[r][0].toString().trim() !== "") {
-           lastRow = r + 2; 
-           break;
-         }
-       }
-       
-       var typeLabel = "";
-       var totalAmount = "";
-       var expenseAmount = "";
+        .mechanic-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
+        .mechanic-stat-card { background: rgba(0,0,0,0.4); border: 1px solid #333; border-radius: 8px; padding: 15px; transition: 0.3s; border-left: 3px solid var(--gold-main); }
+        .mechanic-stat-card:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); transform: translateY(-2px); }
 
-       if (action === "restock") {
-         typeLabel = "🟢 เติมเข้า";
-         expenseAmount = payload.total;
-       } else if (action === "add_budget") {
-         typeLabel = "💰 เพิ่มงบ";
-         totalAmount = payload.total;
-       } else {
-         typeLabel = "🔴 เบิกออก";
-         totalAmount = payload.total;
-       }
-       
-       logSheet.getRange(lastRow, 1, 1, 6).setValues([[
-         timestamp, payload.name, payload.order, payload.note, totalAmount, expenseAmount
-       ]]);
-       
-       logSheet.getRange(lastRow, 9).setValue(typeLabel);
-       
-       var customerName = payload.customer && payload.customer !== "-" ? payload.customer : "";
-       logSheet.getRange(lastRow, 10).setValue(customerName);
-       
-       if (lastRow > 2) {
-         logSheet.getRange("G2:H2").copyTo(logSheet.getRange(lastRow, 7, 1, 2));
-       }
+        .team-history-scroll::-webkit-scrollbar { width: 6px; }
+        .team-history-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
-       var newRowRange = logSheet.getRange(lastRow, 1, 1, 10);
-       newRowRange.setBorder(null, null, true, null, null, null, "#777777", SpreadsheetApp.BorderStyle.SOLID);
-       newRowRange.setVerticalAlignment("middle");
-       
-       var cart = payload.cart;
-       if (stockSheet && cart && action !== "add_budget") {
-         var stockData = stockSheet.getDataRange().getValues();
-         for (var itemName in cart) {
-           var qty = cart[itemName];
-           for (var i = 1; i < stockData.length; i++) {
-             if (stockData[i][0] === itemName) {
-               var currentStock = stockData[i][2];
-               if (currentStock !== "unlimited" && currentStock !== "-" && currentStock !== "∞" && currentStock !== "" && !isNaN(currentStock)) {
-                   var newStock = (action === "restock") ? currentStock + qty : Math.max(0, currentStock - qty);
-                   stockSheet.getRange(i + 1, 3).setValue(newStock);
-               }
-               break;
-             }
-           }
-         }
-       }
-    }
-    
-    updatePayrollSheet(ss);
-    
-    SpreadsheetApp.flush();
-    return ContentService.createTextOutput(JSON.stringify({"status": "success", "message": "ทำรายการสำเร็จ"})).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": error.message})).setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
-  }
-}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleUp { from { transform: scale(0.95); } to { transform: scale(1); } }
+        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
 
-function updatePayrollSheet(ss) {
-  var logSheet = ss.getSheetByName(SHEET_LOG);
-  var teamLogSheet = ss.getSheetByName(SHEET_TEAM_LOG);
-  var payrollSheet = ss.getSheetByName(SHEET_PAYROLL);
-  if (!payrollSheet) payrollSheet = ss.insertSheet(SHEET_PAYROLL);
-  
-  var mechanicColors = {
-    "Enzo Scarlatti": "#FF4500", 
-    "Lucas Harper": "#32CD32",   
-    "Carlious Cedric Rutherford": "#1E90FF", 
-    "Royn Enrico": "#FF1493",
-    "Scarlatt Chaos Rihanna": "#9932CC",
-    "Buckley Red Rihanna": "#DC143C",
-    "Daryl Fender": "#FFD700",
-    "Henry Tomasino": "#FF8C00", // เพิ่มสีให้ Henry แล้ว
-    "ADMIN / OWNER": "#D4AF37"
-  };
+<div class="status-bar">
+    <div class="left"><span id="sb-date">--/--/----</span><span>TCN OS v8.9</span></div>
+    <div class="right"><span id="sb-time">--:--</span><div class="battery"><div class="battery-icon"><div class="battery-level"></div></div><span>85%</span></div></div>
+</div>
 
-  var garageGroup = {};
-  var teamGroup = {};
-  var allDates = {};
-  
-  if (logSheet) {
-    var data = logSheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      var rawTime = data[i][0];
-      var mechanic = data[i][1];
-      var incomeAmount = parseFloat(data[i][4]) || 0; 
-      var expenseAmount = parseFloat(data[i][5]) || 0; 
-      var type = (data[i].length > 8 && data[i][8]) ? String(data[i][8]) : ""; 
-      
-      if (mechanic === "TEAM" || type.indexOf("ทีม") !== -1 || mechanic === "TEST_SYSTEM" || mechanic === "TEST SYSTEM") continue; 
-      
-      if (rawTime && mechanic) {
-        var datePart = "";
-        if (Object.prototype.toString.call(rawTime) === '[object Date]') {
-           datePart = Utilities.formatDate(rawTime, "GMT+7", "dd/MM/yyyy");
+<div class="layout-wrapper" id="main-layout">
+    <div class="main-content">
+        <div class="header-controls">
+            <div class="tabs" id="tab-container">
+                <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
+                <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
+                <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
+                <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติอู่</button>
+                <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
+                <button class="tab-btn" onclick="openTestModal()" style="border-color: #ff00ff; color: #ff00ff;">🧪 ปุ่มทดสอบระบบ</button>
+            </div>
+
+            <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 จัดการกองกลางทีม</button>
+            
+            <div class="search-box" id="searchBox" style="margin-left: 10px;">
+                <input type="text" placeholder="ค้นหาชิ้นส่วน..." onkeyup="searchItems(this.value)">
+            </div>
+        </div>
+        
+        <div class="item-grid" id="item-grid-container"></div>
+
+        <div class="history-container" id="history-container">
+            <h2>📜 ประวัติการทำรายการอู่ (30 รายการล่าสุด)</h2>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>เวลาทำรายการ</th>
+                        <th>สถานะ</th>
+                        <th>พนักงาน</th>
+                        <th style="color: var(--cyan);">ลูกค้า</th>
+                        <th>รายการ</th>
+                        <th>ยอดรวม ($)</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="brand" onclick="toggleApp('dashboardModal')" title="คลิกเพื่อดูกระแสเงินสด">
+            <h1 id="brandTitle">TCN Garage</h1>
+            <p id="brandSub">ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดอู่)</p>
+        </div>
+
+        <label for="userSelect" id="userLabel">เลือกพนักงานผู้ทำรายการ:</label>
+        <select id="userSelect">
+            <option value="" disabled selected>-- กรุณาเลือก --</option>
+            <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
+            <option value="Lucas_Harper">2. Lucas Harper</option>
+            <option value="Carlious_Cedric_Rutherford">3. Carlious Cedric Rutherford</option>
+            <option value="Royn_Enrico">4. Royn Enrico</option>
+            <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
+            <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
+            <option value="Daryl_Fender">7. Daryl Fender</option>
+            <option value="Henry_Tomasino">8. Henry Tomasino</option>
+        </select>
+
+        <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
+        <input type="text" id="customerInput" placeholder="ระบุชื่อลูกค้า..." autocomplete="off">
+
+        <div id="cartSection">
+            <label id="cartLabel">รายการที่เลือก:</label>
+            <div class="sidebar-cart-list" id="sidebarCartList">
+                <div style="text-align:center; color:var(--text-muted); font-size: 13px; padding: 20px 0;">ยังไม่มีอุปกรณ์ในตะกร้า</div>
+            </div>
+        </div>
+
+        <label for="noteInput" id="noteLabel">หมายเหตุ (ถ้ามี):</label>
+        <textarea id="noteInput" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
+
+        <div class="total-box" id="totalBoxWrapper">
+            <span class="label" id="totalLabel">ยอดรวมการเบิก ($)</span>
+            <span class="amount">$<span id="totalPrice">0</span></span>
+        </div>
+
+        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">ยืนยันการทำรายการ</button>
+    </div>
+</div>
+
+<div class="app-modal" id="dashboardModal">
+    <div class="modal-content">
+        <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
+        <h2 id="chartMainTitle" style="color: var(--gold-main); margin-bottom: 15px; text-align: center;">📊 สรุปยอดบัญชีอู่รายวัน</h2>
+        
+        <div class="filter-container">
+            <select id="timeFilter" class="filter-select" onchange="renderChart()"></select>
+        </div>
+
+        <div class="exec-summary">
+            <div class="exec-card">
+                <span>รายรับเข้าอู่สุทธิ</span>
+                <h3 id="dashCentralFund" style="color: var(--gold-main);">$0</h3>
+            </div>
+            <div class="exec-card">
+                <span>ส่วนแบ่งช่างรวม</span>
+                <h3 id="dashMechanicShare" style="color: var(--cyan);">$0</h3>
+            </div>
+            <div class="exec-card">
+                <span>รายจ่ายอู่</span>
+                <h3 id="dashExpense" style="color: var(--danger);">-$0</h3>
+            </div>
+            <div class="exec-card" style="border-color: #555;">
+                <span>กำไรสุทธิ</span>
+                <h3 id="dashProfit">$0</h3>
+            </div>
+        </div>
+
+        <canvas id="stockChart" height="90"></canvas>
+
+        <h3 style="color:#fff; margin-top:25px; font-weight:normal; border-bottom:1px dashed #333; padding-bottom:10px; font-size: 16px;">🏆 รายละเอียดที่มาของรายรับ (เฉพาะวันที่เลือก)</h3>
+        <div id="mechanicStatsContainer" class="mechanic-stats"></div>
+    </div>
+</div>
+
+<div class="app-modal" id="teamModal">
+    <div class="modal-content" style="width: 550px;">
+        <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
+        <h2 style="color: var(--cyan); text-align: center; margin-bottom: 5px;">💎 บัญชีกองกลางทีม</h2>
+        <p style="text-align: center; color: #888; font-size: 13px; margin-bottom: 15px;">ระบบนี้ไม่ถูกนำไปรวมกับบัญชีหลักของอู่</p>
+        
+        <div class="total-box" style="border-color: var(--cyan); background: rgba(0, 206, 209, 0.05); padding: 20px;">
+            <span class="label" style="color: var(--cyan); font-size: 14px; margin-bottom: 5px;">ยอดเงินคงเหลือทีมสุทธิ</span>
+            <span class="amount" style="color: #fff; font-size: 32px;">$<span id="teamBalanceAmount">0</span></span>
+        </div>
+
+        <div style="margin-top: 15px; text-align: left;">
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; color: var(--text-light);">จำนวนเงิน ($):</label>
+            <input type="number" id="teamAmountInput" placeholder="ระบุจำนวนเงิน..." style="width: 100%; padding: 10px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 10px; font-size: 14px;">
+
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; color: var(--text-light);">หมายเหตุ (Note):</label>
+            <textarea id="teamNoteInput" rows="2" placeholder="ระบุรายละเอียด (เช่น ค่าข้าว, เลี้ยงน้ำ)..." style="width: 100%; padding: 10px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 15px; font-size: 14px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-submit" onclick="handleTeamFund('in')" style="background: var(--cyan); color: #000; flex: 1; padding: 12px; font-size: 15px;">📥 ฝากเข้าทีม</button>
+            <button class="btn-submit" onclick="handleTeamFund('out')" style="background: var(--danger); color: #fff; flex: 1; padding: 12px; font-size: 15px;">📤 เบิกเงินไปใช้</button>
+        </div>
+
+        <div style="margin-top: 25px; text-align: left;">
+            <h4 style="color: #ccc; margin-bottom: 10px; font-size: 14px; border-bottom: 1px dashed #333; padding-bottom: 5px;">📜 ประวัติการเคลื่อนไหว (ทีม)</h4>
+            <div class="team-history-scroll" style="max-height: 150px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #aaa;">
+                    <tbody id="team-history-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
+    let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
+    let chartInstance = null;
+    let isAdminMode = false;
+    window.exactTeamBalance = 0; 
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    function playTabSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.05); }
+    function playAddSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+    function playRemoveSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+    function playErrorSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
+    function playSuccessSound() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(); osc1.stop(audioCtx.currentTime + 0.15); osc2.start(audioCtx.currentTime + 0.15); osc2.stop(audioCtx.currentTime + 0.4); }
+
+    function sendDiscordWebhookToChannel(payload) {
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1511627088522776699/1Kx_lvhi_aJe-r5PiNuNsVcAn8bvSyzwzB34iPEMQkf4EZ_JL3iRqCyZGVMAdLK6pOxN";
+        if (!WEBHOOK_URL) return;
+        
+        let title = "🧾 [WITHDRAW] TCN GARAGE";
+        let color = 15965196; 
+        let totalAmount = Number(payload.total) || 0;
+        
+        let displayUser = payload.name.replace(/_/g, ' ');
+        let mechShare = totalAmount * 0.20;
+        let garageShare = totalAmount * 0.80;
+        let mechPct = "20%";
+        let garagePct = "80%";
+
+        if (displayUser === "Scarlatt Chaos Rihanna" || displayUser === "Buckley Red Rihanna") {
+            mechShare = 0;
+            garageShare = totalAmount;
+            mechPct = "0%";
+            garagePct = "100%";
+        } else if (displayUser === "Daryl Fender") {
+            mechShare = totalAmount * 0.10;
+            garageShare = totalAmount * 0.90;
+            mechPct = "10%";
+            garagePct = "90%";
+        }
+
+        let block = String.fromCharCode(96, 96, 96);
+        let detailValue = block + "text\n" + payload.order + "\n" + block;
+        let customerName = payload.customer && payload.customer !== "" ? payload.customer : "-";
+
+        if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
+            title = "🧪 [SYSTEM] ทดสอบระบบ"; 
+            color = 16711935;
+        } else if (payload.action === "restock") {
+            title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
+        } else if (payload.action === "add_budget") {
+            title = "💰 [BUDGET] เพิ่มงบกองกลางอู่"; color = 3800852;
+        } else if (payload.action === "add_team_fund") {
+            title = "💎 [TEAM] ฝากเงินเข้ากองกลางทีม"; color = 52427;
+        } else if (payload.action === "withdraw_team_fund") {
+            title = "💎 [TEAM] เบิกเงินกองกลางทีม"; color = 16730191;
         } else {
-           datePart = rawTime.toString().split(/[,\s]+/)[0];
+            title = "🔴 [WITHDRAW] ช่างเบิกอุปกรณ์";
+            detailValue = block + "text\n" + payload.order + "\n----------------\nช่าง ("+mechPct+"): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ ("+garagePct+"): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         }
-        var key = datePart + "_" + mechanic;
-        if (!garageGroup[key]) garageGroup[key] = { date: datePart, mechanic: mechanic, income: 0, expense: 0, addBudget: 0 };
-        
-        if (type === "🔴 เบิกออก") garageGroup[key].income += incomeAmount;
-        else if (type.indexOf("เติมเข้า") !== -1) garageGroup[key].expense += expenseAmount;
-        else if (type.indexOf("เพิ่มงบ") !== -1) garageGroup[key].addBudget += incomeAmount;
-        
-        allDates[datePart] = true;
-      }
-    }
-  }
 
-  if (teamLogSheet) {
-    var tData = teamLogSheet.getDataRange().getValues();
-    for (var t = 1; t < tData.length; t++) {
-      var rawTime = tData[t][0];
-      var action = tData[t][1];
-      var amt = parseFloat(tData[t][3]) || 0;
-      
-      if (rawTime) {
-        var datePart = "";
-        if (Object.prototype.toString.call(rawTime) === '[object Date]') {
-           datePart = Utilities.formatDate(rawTime, "GMT+7", "dd/MM/yyyy");
+        let fields = [
+            { name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }
+        ];
+
+        if (payload.action === "withdraw") {
+            fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
+        }
+
+        fields.push({ name: "💰 ยอดรวมสุทธิ", value: "$" + totalAmount.toLocaleString('en-US'), inline: true });
+        fields.push({ name: "📝 หมายเหตุ", value: payload.note ? payload.note : "-", inline: false });
+        fields.push({ name: "🛠️ รายละเอียด", value: detailValue, inline: false });
+
+        let embed = {
+            title: title,
+            color: color,
+            fields: fields,
+            timestamp: new Date().toISOString(),
+            footer: { text: "TCN OS v8.9 • System Log" }
+        };
+
+        let formData = new FormData();
+        formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
+
+        fetch(WEBHOOK_URL, { method: 'POST', body: formData }).catch(e => console.error("Discord error:", e));
+    }
+
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('sb-time').innerText = now.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+        document.getElementById('sb-date').innerText = now.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'numeric'});
+    }, 1000);
+
+    window.onload = function() { fetchStock(); };
+
+    async function fetchStock() {
+        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        try { 
+            const response = await fetch(GOOGLE_SCRIPT_URL); 
+            const result = await response.json(); 
+            if (result.status === "success") { 
+                itemsData = result.data; logsData = result.logs || []; 
+                window.exactTeamBalance = result.teamBalance || 0; 
+                populateTimeFilter(); 
+                renderItems(currentCategory); 
+                updateTeamFundBalance(); 
+                if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
+                Swal.close();
+            } else throw new Error(result.message || "Unknown Error"); 
+        } catch (error) { 
+            Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: error.message || '', background: '#141414', color: '#fff' }); 
+        }
+    }
+
+    function populateTimeFilter() {
+        const select = document.getElementById('timeFilter');
+        select.innerHTML = '';
+        let uniqueDates = [];
+        logsData.forEach(log => {
+            let d = parseDateString(log.time);
+            let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+            if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+        });
+
+        if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
+        uniqueDates.forEach((dateStr) => {
+            let opt = document.createElement('option'); opt.value = dateStr; opt.innerText = "📅 ข้อมูลวันที่: " + dateStr; select.appendChild(opt);
+        });
+    }
+
+    function updateTeamFundBalance() {
+        
+        document.getElementById('teamBalanceAmount').innerText = (window.exactTeamBalance || 0).toLocaleString();
+
+        const teamTbody = document.getElementById('team-history-body');
+        teamTbody.innerHTML = '';
+        let teamLogs = logsData.filter(log => log.mechanic === "TEAM");
+
+        if (teamLogs.length === 0) {
+            teamTbody.innerHTML = `<tr><td style="text-align:center; padding: 10px;">ยังไม่มีประวัติการทำรายการของทีม</td></tr>`;
         } else {
-           datePart = rawTime.toString().split(/[,\s]+/)[0];
+            teamLogs.slice(0, 20).forEach(log => {
+                const dateObj = new Date(log.time); 
+                const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                let isDeposit = log.type.includes("ฝาก");
+                let statusBadge = isDeposit ? `<span style="color:var(--cyan);">📥 ฝาก</span>` : `<span style="color:#FF4500;">📤 เบิก</span>`;
+                let displayAmt = Number(log.total) || 0;
+                let cleanOrder = log.order.replace(/💎 \[ฝากเงินทีม\] |💎 \[เบิกใช้ทีม\] /g, "");
+
+                teamTbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #222;">
+                        <td style="padding: 6px;">${dateStr}</td>
+                        <td style="padding: 6px;">${statusBadge}</td>
+                        <td style="padding: 6px; white-space: pre-line;">${cleanOrder} ${log.note ? `(${log.note})` : ''}</td>
+                        <td style="padding: 6px; color: ${isDeposit ? 'var(--cyan)' : '#FF4500'}; text-align: right; font-weight: bold;">$${displayAmt.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
         }
-        var key = datePart + "_TEAM";
-        if (!teamGroup[key]) teamGroup[key] = { date: datePart, mechanic: "TEAM", teamIn: 0, teamOut: 0 };
-        
-        if (action.indexOf("ฝาก") !== -1) teamGroup[key].teamIn += amt;
-        if (action.indexOf("เบิก") !== -1) teamGroup[key].teamOut += amt;
-        
-        allDates[datePart] = true;
-      }
     }
-  }
-  
-  payrollSheet.clear();
 
-  var gHeaders = ["วันที่", "ชื่อช่าง/ผู้ทำรายการ", "รายรับช่าง ($)", "ส่วนแบ่งช่าง ($)", "กองกลางอู่ ($)", "รายจ่ายอู่ ($)", "กำไรสุทธิอู่ ($)"];
-  var tHeaders = ["วันที่", "ชื่อผู้ทำรายการ", "ฝากเงินเข้าทีม ($)", "เบิกเงินทีมไปใช้ ($)", "ยอดคงเหลือของวัน ($)"];
-  
-  var uniqueDates = Object.keys(allDates).sort(function(a, b) {
-    var dA = a.split('/'); var dB = b.split('/');
-    var dateA = (dA.length === 3) ? new Date(dA[2], dA[1]-1, dA[0]).getTime() : 0;
-    var dateB = (dB.length === 3) ? new Date(dB[2], dB[1]-1, dB[0]).getTime() : 0;
-    return dateB - dateA;
-  });
-  
-  var outputRows = [];
-  var formatRows = []; 
-  var gSumIncAll = 0, gSumMechAll = 0, gSumCentralAll = 0, gSumExpAll = 0, gSumNetAll = 0;
-  var tSumInAll = 0, tSumOutAll = 0, tSumNetAll = 0;
+    function getDisplayStock(itemName) {
+        let item = itemsData.find(i => i.name === itemName);
+        if (!item) return 0;
+        if (item.stock === "unlimited") return "unlimited";
+        let cartQty = cart[itemName] || 0;
+        return isAdminMode ? (item.stock + cartQty) : (item.stock - cartQty);
+    }
 
-  for (var d = 0; d < uniqueDates.length; d++) {
-    var dateStr = uniqueDates[d];
-    
-    var d_gKeys = Object.keys(garageGroup).filter(function(k) { return garageGroup[k].date === dateStr; });
-    var d_tKeys = Object.keys(teamGroup).filter(function(k) { return teamGroup[k].date === dateStr; });
-    
-    var maxLen = Math.max(d_gKeys.length, d_tKeys.length);
-    
-    var dayTitleRow = Array(14).fill("");
-    dayTitleRow[0] = "📅 บัญชีอู่ ประจำวันที่: " + dateStr;
-    dayTitleRow[9] = "💎 บัญชีทีม ประจำวันที่: " + dateStr;
-    outputRows.push(dayTitleRow);
-    formatRows.push({ type: 'dayTitle' });
-    
-    outputRows.push(gHeaders.concat(["", ""]).concat(tHeaders));
-    formatRows.push({ type: 'header' });
+    function renderItems(category, searchQuery = '') {
+        const container = document.getElementById('item-grid-container'); container.innerHTML = ''; currentSearchQuery = searchQuery; 
+        const filteredItems = itemsData.filter(item => item.category === category && item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    var gSumIncDay = 0, gSumMechDay = 0, gSumCentralDay = 0, gSumExpDay = 0, gSumNetDay = 0;
-    var tSumInDay = 0, tSumOutDay = 0, tSumNetDay = 0;
-    
-    for (var i = 0; i < maxLen; i++) {
-      var gRow = ["", "", "", "", "", "", ""];
-      var gName = "";
-      var gNet = 0;
-      
-      if (i < d_gKeys.length) {
-        var item = garageGroup[d_gKeys[i]];
-        var displayMechName = item.mechanic.replace(/_/g, ' ');
-        
-        var mechCut = item.income * 0.20; 
-        var centralFund = (item.income * 0.80) + item.addBudget; 
+        filteredItems.forEach(item => {
+            let currentDisplayStock = getDisplayStock(item.name);
+            let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
+            
+            let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
+            
+            const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
+            const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
+            container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
+        });
+    }
 
-        if (displayMechName === "Scarlatt Chaos Rihanna" || displayMechName === "Buckley Red Rihanna") {
-            mechCut = 0;
-            centralFund = item.income + item.addBudget;
-        } else if (displayMechName === "Daryl Fender") {
-            mechCut = item.income * 0.10;
-            centralFund = (item.income * 0.90) + item.addBudget;
+    function addItem(name) { 
+        let item = itemsData.find(i => i.name === name); 
+        if (item) {
+            let currentCartQty = cart[name] || 0;
+            if(!isAdminMode && (item.stock === "unlimited" || (item.stock - currentCartQty) > 0)) { 
+                total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
+            } else if (isAdminMode) { 
+                total += item.price; cart[name] = currentCartQty + 1; playAddSound(); updateUI(); 
+            } else { playErrorSound(); }
+        } 
+    }
+    
+    function updateCartQty(name, change) {
+        let item = itemsData.find(i => i.name === name); if (!item) return;
+        let currentCartQty = cart[name] || 0;
+
+        if (change > 0) { 
+            if (!isAdminMode && (item.stock === "unlimited" || (item.stock - currentCartQty) > 0)) { cart[name]++; total += item.price; playAddSound(); } 
+            else if (isAdminMode) { cart[name]++; total += item.price; playAddSound(); } 
+            else { playErrorSound(); Swal.fire({ icon: 'warning', title: 'สินค้าหมด', text: 'คลังในระบบหมดลงแล้วครับ', background: '#141414', color: '#ffffff' }); }
         }
+        else if (change < 0 && currentCartQty > 0) { 
+            cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playRemoveSound(); 
+        }
+        updateUI();
+    }
+
+    function renderHistory() {
+        const tbody = document.getElementById('history-table-body'); tbody.innerHTML = '';
+        let garageLogs = logsData.filter(log => log.mechanic !== "TEAM");
+
+        if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
         
-        var netProfit = centralFund - item.expense;
+        let displayLogs = garageLogs.slice(0, 30);
+        displayLogs.forEach(log => {
+            const dateObj = new Date(log.time); 
+            const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            
+            let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
+            let totalColor = `color: var(--gold-main);`; 
+            
+            if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
+                statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
+            } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
+                statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
+            }
+
+            let customerName = log.customer && log.customer !== "" ? log.customer : "-";
+            
+            let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
+            let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
+            let displayTotal = Number(log.total) || 0;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${dateStr}</td>
+                    <td>${statusBadge}</td>
+                    <td>${(log.mechanic || '').replace(/_/g, ' ')}</td>
+                    <td style="color: var(--cyan); font-weight: bold;">${customerName}</td>
+                    <td style="font-size: 13px; color: #ccc; white-space: pre-line; line-height: 1.5;">${cleanOrder}${noteHtml}</td>
+                    <td class="total-col" style="${totalColor}">$${displayTotal.toLocaleString()}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function toggleRestockMode() {
+        playTabSound();
+        const customerLabel = document.getElementById('customerLabel');
+        const customerInput = document.getElementById('customerInput');
+
+        if (isAdminMode) {
+            isAdminMode = false; clearCart(); updateSidebarUI();
+            if(customerLabel) customerLabel.style.display = 'block';
+            if(customerInput) customerInput.style.display = 'block';
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'โหมดเบิกของ', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
+        } else {
+            isAdminMode = true; clearCart(); updateSidebarUI();
+            if(customerLabel) customerLabel.style.display = 'none';
+            if(customerInput) customerInput.style.display = 'none';
+            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'โหมดเติมสต็อก', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false });
+        }
+    }
+
+    async function openTestModal() {
+        playTabSound();
+        const { value: pin } = await Swal.fire({
+            title: '🔒 กรุณาใส่รหัสผ่านทดสอบ',
+            input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
+            showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#ff00ff', cancelButtonColor: '#333'
+        });
+
+        if (pin !== '2547') {
+            if (pin) { playErrorSound(); Swal.fire({icon: 'error', title: 'รหัสไม่ถูกต้อง!', background: '#141414', color: '#fff'}); }
+            return;
+        }
+
+        const { value: formValues } = await Swal.fire({
+            title: '🧪 เรียกใช้การทดสอบระบบ (กระตุ้น Sheet)',
+            html:
+                '<input id="swal-input1" class="swal2-input" type="number" placeholder="จำนวนเงินทดสอบ ($)" value="1" min="1" style="background:#1f1f1f; color:#fff; border-color:#333;">' +
+                '<input id="swal-input2" class="swal2-input" value="ทดสอบระบบรีเฟรชชีต" placeholder="หมายเหตุ" style="background:#1f1f1f; color:#fff; border-color:#333;">',
+            focusConfirm: false, background: '#141414', color: '#fff',
+            showCancelButton: true, confirmButtonText: 'ส่งข้อมูลทดสอบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ff00ff',
+            preConfirm: () => { return [document.getElementById('swal-input1').value, document.getElementById('swal-input2').value] }
+        });
+
+        if (formValues) {
+            let amt = Number(formValues[0]);
+            let note = formValues[1] || 'ทดสอบระบบ';
+            if (amt <= 0) return Swal.fire({icon: 'error', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
+
+            let payload = { name: "TEST_SYSTEM", customer: "-", order: "🧪 [ทดสอบระบบ]", note: note, total: amt, cart: {}, action: "add_budget" };
+
+            Swal.fire({ title: 'กำลังส่งข้อมูลทดสอบ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+            try { 
+                const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                const result = await res.json();
+                if (result.status === "success") { 
+                    playSuccessSound(); 
+                    sendDiscordWebhookToChannel(payload);
+                    Swal.fire({ icon: 'success', title: 'ส่งข้อมูลทดสอบสำเร็จ!', text: `กระตุ้นระบบเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+                } else throw new Error(result.message);
+            } catch (e) { playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
+        }
+    }
+
+    async function openTeamModal() {
+        playTabSound();
+        const { value: pin } = await Swal.fire({
+            title: '🔒 ยืนยันรหัสผ่านทีม',
+            input: 'password', inputPlaceholder: 'รหัส 4 หลัก', background: '#141414', color: '#fff',
+            showCancelButton: true, confirmButtonText: 'เข้าสู่ระบบทีม', cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: 'var(--cyan)', cancelButtonColor: '#333'
+        });
+
+        if (pin !== '1990') {
+            if (pin) { playErrorSound(); Swal.fire({icon: 'error', title: 'รหัสไม่ถูกต้อง!', background: '#141414', color: '#fff'}); }
+            return;
+        }
+
+        updateTeamFundBalance();
+        toggleApp('teamModal');
+    }
+
+    async function handleTeamFund(actionType) {
+        let amtInput = document.getElementById('teamAmountInput').value;
+        let noteInput = document.getElementById('teamNoteInput').value;
+        let amt = Number(amtInput);
+
         
-        gName = displayMechName;
-        gNet = netProfit;
-        gSumIncDay += item.income; gSumMechDay += mechCut; gSumCentralDay += centralFund; gSumExpDay += item.expense; gSumNetDay += netProfit;
-        gSumIncAll += item.income; gSumMechAll += mechCut; gSumCentralAll += centralFund; gSumExpAll += item.expense; gSumNetAll += netProfit;
-        gRow = [item.date, gName, item.income, mechCut, centralFund, item.expense, netProfit];
-      }
-      
-      var tRow = ["", "", "", "", ""];
-      var tNet = 0;
-      if (i < d_tKeys.length) {
-        var itemT = teamGroup[d_tKeys[i]];
-        var netTeam = itemT.teamIn - itemT.teamOut;
-        tNet = netTeam;
-        tSumInDay += itemT.teamIn; tSumOutDay += itemT.teamOut; tSumNetDay += netTeam;
-        tSumInAll += itemT.teamIn; tSumOutAll += itemT.teamOut; tSumNetAll += netTeam;
-        tRow = [itemT.date, itemT.mechanic, itemT.teamIn, itemT.teamOut, netTeam];
-      }
-      
-      outputRows.push(gRow.concat(["", ""]).concat(tRow)); 
-      formatRows.push({ type: 'data', gName: gName, gVal: gNet, tVal: tNet });
+        let currentBal = window.exactTeamBalance || 0;
+
+        if (amt <= 0) {
+            playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุจำนวนเงิน', background: '#141414', color: '#fff'});
+        }
+
+        if (actionType === 'out' && amt > currentBal) {
+            playErrorSound(); 
+            return Swal.fire({
+                icon: 'error', 
+                title: 'เงินทีมไม่พอ!', 
+                text: `คุณมีเงินให้เบิกได้สูงสุดแค่ $${currentBal.toLocaleString()} เท่านั้นครับ`, 
+                background: '#141414', 
+                color: '#fff'
+            });
+        }
+
+        playTabSound();
+        let isDeposit = (actionType === 'in');
+        let note = noteInput || (isDeposit ? 'สมทบทุนทีม' : 'นำไปใช้จ่ายสวัสดิการ');
+
+        let payload = { 
+            name: "TEAM", 
+            customer: "-",
+            order: isDeposit ? "💎 [ฝากเงินทีม]" : "💎 [เบิกใช้ทีม]", 
+            note: note, 
+            total: amt, 
+            cart: {}, 
+            action: isDeposit ? "add_team_fund" : "withdraw_team_fund" 
+        };
+
+        document.getElementById('teamModal').classList.remove('active');
+
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        try { 
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const result = await res.json();
+            if (result.status === "success") { 
+                playSuccessSound(); 
+                sendDiscordWebhookToChannel(payload);
+                document.getElementById('teamAmountInput').value = ''; 
+                document.getElementById('teamNoteInput').value = ''; 
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตยอดบัญชีทีมเรียบร้อยแล้ว`, background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
+            } else throw new Error(result.message);
+        } catch (e) { console.error(e); playErrorSound(); Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: e.message, background: '#141414', color: '#fff' }); }
+    }
+
+    function updateSidebarUI() {
+        const brandTitle = document.getElementById('brandTitle'); const brandSub = document.getElementById('brandSub'); const submitBtn = document.getElementById('submitBtn'); const userLabel = document.getElementById('userLabel'); const totalLabel = document.getElementById('totalLabel'); const totalBoxWrapper = document.getElementById('totalBoxWrapper'); const btnRestock = document.getElementById('btnRestockMode'); const noteLabel = document.getElementById('noteLabel');
+        if(isAdminMode) {
+            brandTitle.innerText = "TCN RESTOCK"; brandTitle.style.color = "var(--warning)"; brandSub.innerText = "โหมดเติมอะไหล่เข้าสต็อกอู่ 📦"; userLabel.innerText = "เลือกพนักงานผู้เติมสต็อก:"; totalLabel.innerText = "มูลค่าของที่เติมเข้าคลัง ($)"; totalBoxWrapper.style.borderColor = "var(--warning)"; submitBtn.innerText = "ยืนยันการเติมของเข้าคลัง"; submitBtn.style.background = "var(--warning)"; btnRestock.style.background = 'var(--warning)'; btnRestock.style.color = '#000'; btnRestock.innerText = '❌ ยกเลิกเติมสต็อก'; noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
+        } else {
+            brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)"; brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดอู่)"; userLabel.innerText = "เลือกพนักงานผู้เบิก:"; totalLabel.innerText = "ยอดรวมการเบิก ($)"; totalBoxWrapper.style.borderColor = "var(--gold-main)"; submitBtn.innerText = "ยืนยันการทำรายการ"; submitBtn.style.background = "var(--gold-main)"; btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก'; noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
+        }
+        if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') renderItems(currentCategory, currentSearchQuery);
+    }
+
+    function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
+
+    function changeTab(cat, el) { 
+        currentCategory = cat; document.querySelectorAll('#tab-container .tab-btn').forEach(t => t.classList.remove('active')); 
+        if(el.parentElement.id === 'tab-container') el.classList.add('active'); 
+        playTabSound(); 
+        if (cat === 'History') { isAdminMode = false; clearCart(); updateSidebarUI(); } else { updateSidebarUI(); }
+        document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('history-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden';
+        if (cat === 'History') { document.getElementById('history-container').style.display = 'block'; renderHistory(); } else { document.getElementById('item-grid-container').style.display = 'grid'; document.getElementById('searchBox').style.visibility = 'visible'; renderItems(currentCategory, currentSearchQuery); }
     }
     
-    var daySummaryRow = ["📌 สรุปยอดรายวัน", "", gSumIncDay, gSumMechDay, gSumCentralDay, gSumExpDay, gSumNetDay, "", "", "📌 สรุปยอดทีมรายวัน", "", tSumInDay, tSumOutDay, tSumNetDay];
-    outputRows.push(daySummaryRow);
-    formatRows.push({ type: 'daySummary', gNet: gSumNetDay, tNet: tSumNetDay });
-
-    if (d < uniqueDates.length - 1) {
-       outputRows.push(Array(14).fill(""));
-       formatRows.push({ type: 'spacer' });
+    function renderSidebarCart() {
+        const list = document.getElementById('sidebarCartList'); list.innerHTML = ''; const keys = Object.keys(cart);
+        if (keys.length === 0) { list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size: 13px; padding: 20px 0;">ยังไม่มีอุปกรณ์ในตะกร้า</div>`; return; }
+        keys.forEach(name => { let item = itemsData.find(i => i.name === name); list.innerHTML += `<div class="sidebar-cart-item"><div class="sidebar-cart-item-info"><h5>${name}</h5><span>$${(item.price * cart[name]).toLocaleString()}</span></div><div class="sidebar-qty-control"><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', -1)">-</button><span class="qty-num">${cart[name]}</span><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', 1)">+</button></div></div>`; });
     }
-  }
 
-  var grandTotalRow = ["🏢 ยอดรวมทุกวัน (GRAND TOTAL)", "", gSumIncAll, gSumMechAll, gSumCentralAll, gSumExpAll, gSumNetAll, "", "", "💎 ยอดรวมทีมทั้งหมด", "", tSumInAll, tSumOutAll, tSumNetAll];
-  outputRows.unshift(Array(14).fill("")); 
-  formatRows.unshift({ type: 'spacer' });
-  outputRows.unshift(grandTotalRow);
-  formatRows.unshift({ type: 'grandTotal', gNet: gSumNetAll, tNet: tSumNetAll });
+    function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
 
-  if (outputRows.length > 0) {
-    var dataRange = payrollSheet.getRange(1, 1, outputRows.length, 14);
-    dataRange.setValues(outputRows);
-    
-    var bgColors = [];
-    var fontColors = [];
-    var fontWeights = [];
+    function generateInvoiceHTML(user, customer, note, actionType) {
+        let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
+        if(actionType === "restock") { titleName = "TCN RESTOCK SLIP"; titleDesc = "RESTOCK INVENTORY REPORT"; userTitle = "ผู้ทำรายการเติม"; amountLabel = "มูลค่าสินค้ารวม"; bottomDesc = "*** อัปเดตคลังเข้าฐานข้อมูลเรียบร้อย ***"; }
+        
+        let custHtml = actionType === "withdraw" && customer !== "" ? `<p style="margin: 5px 0; font-size: 14px;"><strong>ลูกค้า:</strong> ${customer}</p>` : '';
 
-    for (var f = 0; f < formatRows.length; f++) {
-      var fInfo = formatRows[f];
-      var rowBg = Array(14).fill(null);
-      var rowFc = Array(14).fill(null);
-      var rowFw = Array(14).fill(null);
-
-      if (fInfo.type === 'grandTotal') {
-         rowBg.fill("#080808");
-         rowFw.fill("bold");
-         rowFc.fill("#ffffff");
-         rowFc[0] = "#D4AF37"; 
-         rowFc[9] = "#00CED1"; 
-         if (fInfo.gNet > 0) rowFc[6] = "#39FF14"; else if (fInfo.gNet < 0) rowFc[6] = "#ff4d4d";
-         if (fInfo.tNet > 0) rowFc[13] = "#00CED1"; else if (fInfo.tNet < 0) rowFc[13] = "#FF4500";
-      } else if (fInfo.type === 'dayTitle') {
-         rowBg.fill("#1a1a1a");
-         rowFw.fill("bold");
-         rowFc.fill("#ffffff");
-         rowFc[0] = "#D4AF37";
-         rowFc[9] = "#00CED1";
-      } else if (fInfo.type === 'header') {
-         for(var c=0; c<7; c++) { rowBg[c] = "#D4AF37"; rowFc[c] = "#000000"; rowFw[c] = "bold"; }
-         for(var c=9; c<14; c++) { rowBg[c] = "#00CED1"; rowFc[c] = "#000000"; rowFw[c] = "bold"; }
-      } else if (fInfo.type === 'daySummary') {
-         rowBg.fill("#2a2a2a");
-         rowFw.fill("bold");
-         rowFc.fill("#ffffff");
-         if (fInfo.gNet > 0) rowFc[6] = "#39FF14"; else if (fInfo.gNet < 0) rowFc[6] = "#ff4d4d";
-         if (fInfo.tNet > 0) rowFc[13] = "#00CED1"; else if (fInfo.tNet < 0) rowFc[13] = "#FF4500";
-      } else if (fInfo.type === 'data') {
-         if (fInfo.gName && mechanicColors[fInfo.gName]) {
-             rowFc[1] = mechanicColors[fInfo.gName];
-             rowFw[1] = "bold";
-         }
-         if (fInfo.gVal > 0) { rowFc[6] = "#008000"; rowFw[6] = "bold"; }
-         else if (fInfo.gVal < 0) { rowFc[6] = "#FF0000"; rowFw[6] = "bold"; }
-
-         if (fInfo.tVal > 0) { rowFc[13] = "#00CED1"; rowFw[13] = "bold"; }
-         else if (fInfo.tVal < 0) { rowFc[13] = "#FF4500"; rowFw[13] = "bold"; }
-      }
-
-      bgColors.push(rowBg);
-      fontColors.push(rowFc);
-      fontWeights.push(rowFw);
+        let html = `<div style="font-family: 'Courier New', monospace; text-align: left; background: #fff; color: #000; padding: 25px; border-radius: 4px; border: 1px solid #ccc; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);"><div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 22px; font-weight: 900;">${titleName}</h2><p style="margin: 5px 0 0 0; font-size: 13px;">${titleDesc}</p></div><p style="margin: 5px 0; font-size: 14px;"><strong>${userTitle}:</strong> ${user.replace(/_/g, ' ')}</p>${custHtml}<p style="margin: 5px 0 15px 0; font-size: 14px;"><strong>วันที่:</strong> ${new Date().toLocaleString('th-TH')}</p><table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px;"><tr style="border-bottom: 1px solid #000;"><th style="text-align:left; padding-bottom:5px;">รายการ</th><th style="text-align:center;">จำนวน</th><th style="text-align:right;">มูลค่า</th></tr>`;
+        for (let name in cart) { let item = itemsData.find(i => i.name === name); html += `<tr><td style="padding: 5px 0; white-space: pre-line;">${name}</td><td style="text-align:center;">${cart[name]}</td><td style="text-align:right;">$${(item.price * cart[name]).toLocaleString()}</td></tr>`; }
+        html += `</table><div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-size: 17px;"><strong>${amountLabel}: <span style="font-size: 22px;">$${total.toLocaleString()}</span></strong></div>${note ? `<p style="margin-top:15px; font-size:12px; color:#555;">หมายเหตุ: ${note}</p>` : ''}<div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">${bottomDesc}</div></div>`; return html;
     }
-    
-    dataRange.setBackgrounds(bgColors);
-    dataRange.setFontColors(fontColors);
-    dataRange.setFontWeights(fontWeights);
-  }
 
-  payrollSheet.setColumnWidth(1, 110);        
-  payrollSheet.setColumnWidth(2, 200);        
-  payrollSheet.setColumnWidths(3, 7, 145);    
-  payrollSheet.setColumnWidth(8, 40);         
-  payrollSheet.setColumnWidth(9, 30);         
-  payrollSheet.setColumnWidth(10, 110);       
-  payrollSheet.setColumnWidth(11, 200);       
-  payrollSheet.setColumnWidths(12, 3, 155);   
-}
+    async function submitOrder() {
+        const userSelect = document.getElementById('userSelect'); 
+        const user = userSelect.options[userSelect.selectedIndex].value; 
+        const note = document.getElementById('noteInput').value;
+        const customer = document.getElementById('customerInput').value.trim();
+
+        if (user === "") { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาเลือกรายชื่อผู้ทำรายการ', background: '#141414', color: '#fff' }); }
+        
+        if (!isAdminMode && customer === "") { 
+            playErrorSound(); 
+            return Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาด', text: 'กรุณาระบุชื่อลูกค้าด้วยครับ!', background: '#141414', color: '#fff' }); 
+        }
+
+        if (total === 0) { playErrorSound(); return Swal.fire({ icon: 'warning', title: 'ตะกร้าว่างเปล่า', text: 'กรุณาเลือกอุปกรณ์', background: '#141414', color: '#fff' }); }
+        
+        let orderArr = []; for (let n in cart) orderArr.push(`${n} x ${cart[n]}`);
+        let finalOrder = orderArr.join('\n'); 
+        let currentAction = isAdminMode ? "restock" : "withdraw";
+
+        const payload = { 
+            name: user, 
+            customer: customer, 
+            order: finalOrder, 
+            note: note, 
+            total: total, 
+            cart: cart, 
+            action: currentAction 
+        };
+        
+        let invoiceHtmlStr = generateInvoiceHTML(user, customer, note, currentAction);
+
+        Swal.fire({ title: 'กำลังทำรายการ...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        try { 
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const result = await res.json();
+            if (result.status === "success") { 
+                playSuccessSound(); 
+                sendDiscordWebhookToChannel(payload);
+                for (let name in cart) {
+                    let item = itemsData.find(i => i.name === name);
+                    if (item && item.stock !== "unlimited") {
+                        if (currentAction === "restock") item.stock += cart[name]; 
+                        if (currentAction === "withdraw") item.stock -= cart[name];
+                    }
+                }
+                clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
+                document.getElementById('customerInput').value = '';
+                Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
+            } else throw new Error(result.message);
+        } catch (e) { 
+            console.error(e); playErrorSound(); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message || 'เชื่อมต่อฐานข้อมูลล้มเหลว', background: '#141414', color: '#fff' }); 
+        }
+    }
+
+    function toggleApp(appId) { const modal = document.getElementById(appId); if (!modal.classList.contains('active')) { playTabSound(); modal.classList.add('active'); if (appId === 'dashboardModal') renderChart(); } else { playTabSound(); modal.classList.remove('active'); } }
+
+    function parseDateString(dateStr) {
+        if (!dateStr) return new Date(); if (dateStr instanceof Date) return dateStr;
+        let parts = dateStr.split(/[\s,]+/); let datePart = parts[0]; let dmy = datePart.split('/');
+        if (dmy.length === 3) return new Date(parseInt(dmy[2]), parseInt(dmy[1]) - 1, parseInt(dmy[0]));
+        return new Date(dateStr);
+    }
+
+    function renderChart() {
+        if (!logsData.length) return; 
+        
+        let filterValue = document.getElementById('timeFilter').value; 
+        document.getElementById('chartMainTitle').innerText = "📊 สรุปยอดบัญชีอู่รายวัน: " + filterValue;
+
+        const ctx = document.getElementById('stockChart').getContext('2d'); 
+        if (chartInstance) chartInstance.destroy(); 
+        
+        let totalIncome = 0; let totalExpense = 0; let totalAddedBudget = 0; let mechanicTotals = {};
+
+        logsData.forEach(log => {
+            let logDate = parseDateString(log.time);
+            let logDateStr = logDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            if (logDateStr === filterValue) {
+                let amount = Number(log.total) || 0;
+                if (log.mechanic === "TEAM" || log.mechanic === "TEST_SYSTEM" || log.mechanic === "TEST SYSTEM") return; 
+                
+                if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
+                    totalExpense += amount;
+                } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]")) {
+                    totalAddedBudget += amount;
+                } else {
+                    totalIncome += amount;
+                    let mechName = (log.mechanic || "ไม่ระบุชื่อ").replace(/_/g, ' ');
+                    if (!mechanicTotals[mechName]) mechanicTotals[mechName] = 0;
+                    mechanicTotals[mechName] += amount;
+                }
+            }
+        });
+
+        let totalCentralFund = totalAddedBudget;
+        let totalMechanicShare = 0;
+
+        const statsContainer = document.getElementById('mechanicStatsContainer'); statsContainer.innerHTML = ''; 
+        const mechKeys = Object.keys(mechanicTotals);
+
+        if (mechKeys.length === 0 && totalAddedBudget === 0) { 
+            statsContainer.innerHTML = `<p style="color:#666; grid-column: 1 / -1; text-align:center; padding: 10px 0;">ไม่มีข้อมูลการเบิกของช่างในวันที่ ${filterValue}</p>`; 
+        } else {
+            mechKeys.sort((a, b) => mechanicTotals[b] - mechanicTotals[a]);
+            mechKeys.forEach(name => {
+                let mechIncome = mechanicTotals[name]; 
+                let mechCut = mechIncome * 0.20;
+                let garageCut = mechIncome * 0.80; 
+                let pctMech = "20%";
+                let pctGarage = "80%";
+
+                if (name === "Scarlatt Chaos Rihanna" || name === "Buckley Red Rihanna") {
+                    mechCut = 0;
+                    garageCut = mechIncome;
+                    pctMech = "0%";
+                    pctGarage = "100%";
+                } else if (name === "Daryl Fender") {
+                    mechCut = mechIncome * 0.10;
+                    garageCut = mechIncome * 0.90;
+                    pctMech = "10%";
+                    pctGarage = "90%";
+                }
+                
+                totalCentralFund += garageCut;
+                totalMechanicShare += mechCut;
+
+                statsContainer.innerHTML += `
+                    <div class="mechanic-stat-card">
+                        <h4 style="color:#fff; font-size:15px; margin-bottom:10px;">${name}</h4>
+                        <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>หาเงินเข้าอู่ (100%):</span> <span style="color:#fff;">$${mechIncome.toLocaleString()}</span></div>
+                        <div style="font-size: 13px; color: var(--success); display:flex; justify-content:space-between; margin-bottom:5px;"><span>ส่วนแบ่งเข้าอู่ (${pctGarage}):</span> <span>+$${garageCut.toLocaleString()}</span></div>
+                        <div style="font-size: 14px; color: var(--gold-main); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>ส่วนแบ่งช่าง (${pctMech}):</span> <span>$${mechCut.toLocaleString()}</span></div>
+                    </div>
+                `;
+            });
+
+            if (totalAddedBudget > 0) {
+                statsContainer.innerHTML += `
+                    <div class="mechanic-stat-card" style="border-left-color: var(--success);">
+                        <h4 style="color:var(--success); font-size:15px; margin-bottom:10px;">💰 เพิ่มงบอู่</h4>
+                        <div style="font-size: 12px; color: #aaa; display:flex; justify-content:space-between; margin-bottom:5px;"><span>ประเภท:</span> <span style="color:#fff;">เงินทุน/เงินส่วนตัว</span></div>
+                        <div style="font-size: 14px; color: var(--success); display:flex; justify-content:space-between; border-top: 1px dashed #333; padding-top: 8px; margin-top: 8px; font-weight:bold;"><span>สมทบเข้าอู่:</span> <span>+$${totalAddedBudget.toLocaleString()}</span></div>
+                    </div>
+                `;
+            }
+        }
+
+        let netProfit = totalCentralFund - totalExpense;
+        
+        document.getElementById('dashCentralFund').innerText = "$" + totalCentralFund.toLocaleString();
+        document.getElementById('dashMechanicShare').innerText = "$" + totalMechanicShare.toLocaleString();
+        document.getElementById('dashExpense').innerText = "-$" + totalExpense.toLocaleString();
+        
+        let profitEl = document.getElementById('dashProfit');
+        if (netProfit > 0) { profitEl.innerText = "+$" + netProfit.toLocaleString(); profitEl.style.color = "var(--success)"; } 
+        else if (netProfit < 0) { profitEl.innerText = "-$" + Math.abs(netProfit).toLocaleString(); profitEl.style.color = "var(--danger)"; } 
+        else { profitEl.innerText = "$0"; profitEl.style.color = "#fff"; }
+
+        chartInstance = new Chart(ctx, { 
+            type: 'bar', 
+            data: { labels: ['รายรับเข้าอู่สุทธิ', 'รายจ่าย'], datasets: [{ label: 'ยอดเงิน (USD)', data: [totalCentralFund, totalExpense], backgroundColor: ['rgba(212, 175, 55, 0.7)', 'rgba(255, 77, 77, 0.7)'], borderColor: ['#D4AF37', '#ff4d4d'], borderWidth: 1 }] }, 
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { display: false } } } 
+        });
+    }
+</script>
+</body>
+</html>
