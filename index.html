@@ -404,8 +404,11 @@
 
     window.onload = function() { fetchStock(); };
 
-    async function fetchStock() {
-        Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+    // ฟังก์ชันโหลดข้อมูลแบบซ่อนหน้าจอโหลด (Silent)
+    async function fetchStock(isSilent = false) {
+        if (!isSilent) {
+            Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
+        }
         try { 
             const response = await fetch(GOOGLE_SCRIPT_URL); 
             const result = await response.json(); 
@@ -413,15 +416,22 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 window.exactTeamBalance = result.teamBalance || 0; 
                 populateTimeFilter(); 
-                renderItems(currentCategory); 
+                renderItems(currentCategory, currentSearchQuery); 
                 updateTeamFundBalance(); 
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
-                Swal.close();
+                if (!isSilent) Swal.close();
             } else throw new Error(result.message || "Unknown Error"); 
         } catch (error) { 
-            Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: error.message || '', background: '#141414', color: '#fff' }); 
+            if (!isSilent) {
+                Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: error.message || '', background: '#141414', color: '#fff' }); 
+            }
         }
     }
+
+    // แอบดึงข้อมูลใหม่ทุกๆ 15 วินาที
+    setInterval(() => {
+        fetchStock(true); 
+    }, 15000); 
 
     function populateTimeFilter() {
         const select = document.getElementById('timeFilter');
