@@ -160,9 +160,10 @@
     <div class="main-content">
         <div class="header-controls">
             <div class="tabs" id="tab-container">
-                <button class="tab-btn active" onclick="changeTab('Customs', this)">Customs</button>
-                <button class="tab-btn" onclick="changeTab('Core Parts', this)">Core Parts</button>
+                <!-- เอาแท็บ Customs ออกแล้วให้ Core Parts เป็นหน้าหลัก -->
+                <button class="tab-btn active" onclick="changeTab('Core Parts', this)">Core Parts</button>
                 <button class="tab-btn" onclick="changeTab('Service', this)">Service</button>
+                <button class="tab-btn" onclick="changeTab('ManualOrder', this)" style="border-color: var(--cyan); color: var(--cyan);">🧾 คีย์เลขออเดอร์</button>
                 <button class="tab-btn" onclick="changeTab('History', this)" style="border-color: #555; color: #ccc;">📜 ประวัติอู่</button>
                 <button class="tab-btn" id="btnRestockMode" onclick="toggleRestockMode()" style="border-color: var(--warning); color: var(--warning);">📦 เติมสต็อก</button>
                 <button class="tab-btn" onclick="openTestModal()" style="border-color: #ff00ff; color: #ff00ff;">🧪 ปุ่มทดสอบระบบ</button>
@@ -176,6 +177,37 @@
         </div>
         
         <div class="item-grid" id="item-grid-container"></div>
+
+        <!-- หน้าสำหรับคีย์ออเดอร์เขียนมือ / เลขออเดอร์ -->
+        <div class="history-container" id="manual-order-container" style="display: none; max-width: 600px;">
+            <h2 style="color: var(--cyan); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🧾 สร้างบิลเลขออเดอร์</h2>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="color: var(--text-light); font-size: 14px; margin-bottom: 5px; display: block;">🏷️ เลข Order / ชื่อรายการ:</label>
+                    <input type="text" id="manualOrderNo" placeholder="เช่น Order #1024 หรือ คัสตอมสีรถ..." style="width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 14px; outline: none;">
+                </div>
+                <div>
+                    <label style="color: var(--text-light); font-size: 14px; margin-bottom: 5px; display: block;">💰 ราคา Order ($):</label>
+                    <input type="number" id="manualOrderPrice" placeholder="ระบุราคาออเดอร์..." style="width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 14px; outline: none;">
+                </div>
+                <div>
+                    <label style="color: var(--text-light); font-size: 14px; margin-bottom: 5px; display: block;">🧑‍🔧 ชื่อช่างผู้ทำรายการ:</label>
+                    <select id="manualOrderMechanic" style="width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-size: 14px; outline: none;">
+                        <option value="" disabled selected>-- เลือกช่าง --</option>
+                        <option value="Enzo_Scarlatti">1. Enzo Scarlatti</option>
+                        <option value="Lucas_Harper">2. Lucas Harper</option>
+                        <option value="Carlious_Cedric_Rutherford">3. Carlious Cedric Rutherford</option>
+                        <option value="Royn_Enrico">4. Royn Enrico</option>
+                        <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
+                        <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
+                        <option value="Daryl_Fender">7. Daryl Fender</option>
+                        <option value="Henry_Tomasino">8. Henry Tomasino</option>
+                    </select>
+                </div>
+                <button class="btn-submit" onclick="addManualOrder()" style="background: var(--cyan); color: #000; margin-top: 10px;">➕ เพิ่มบิลลงตะกร้าเบิก</button>
+            </div>
+        </div>
 
         <div class="history-container" id="history-container">
             <h2>📜 ประวัติการทำรายการอู่ (30 รายการล่าสุด)</h2>
@@ -211,6 +243,7 @@
             <option value="Royn_Enrico">4. Royn Enrico</option>
             <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
             <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
+            <option value="Daryl_Fender">7. Daryl Fender</option>
             <option value="Henry_Tomasino">8. Henry Tomasino</option>
         </select>
 
@@ -309,7 +342,8 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI4yKDjo2PEID936ljrvTGUlkU49V_xK496gyEeVFGXmlNYW_VFgDAgxWlYXE1A7Wp/exec"; 
-    let total = 0, currentCategory = 'Customs', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
+    // เปลี่ยนหน้าเริ่มต้นเป็น Core Parts
+    let total = 0, currentCategory = 'Core Parts', currentSearchQuery = '', cart = {}, itemsData = [], logsData = []; 
     let chartInstance = null;
     let isAdminMode = false;
     window.exactTeamBalance = 0; 
@@ -403,7 +437,6 @@
 
     window.onload = function() { fetchStock(); };
 
-    // ฟังก์ชันโหลดข้อมูลแบบซ่อนหน้าจอโหลด (Silent)
     async function fetchStock(isSilent = false) {
         if (!isSilent) {
             Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -415,7 +448,9 @@
                 itemsData = result.data; logsData = result.logs || []; 
                 window.exactTeamBalance = result.teamBalance || 0; 
                 populateTimeFilter(); 
-                renderItems(currentCategory, currentSearchQuery); 
+                if (currentCategory === 'Core Parts' || currentCategory === 'Service') {
+                    renderItems(currentCategory, currentSearchQuery); 
+                }
                 updateTeamFundBalance(); 
                 if (document.getElementById('dashboardModal').classList.contains('active')) { renderChart(); }
                 if (!isSilent) Swal.close();
@@ -427,7 +462,6 @@
         }
     }
 
-    // แอบดึงข้อมูลใหม่ทุกๆ 15 วินาที
     setInterval(() => {
         fetchStock(true); 
     }, 15000); 
@@ -449,7 +483,6 @@
     }
 
     function updateTeamFundBalance() {
-        
         document.getElementById('teamBalanceAmount').innerText = (window.exactTeamBalance || 0).toLocaleString();
 
         const teamTbody = document.getElementById('team-history-body');
@@ -528,6 +561,45 @@
             cart[name]--; total -= item.price; if(cart[name]===0) delete cart[name]; playRemoveSound(); 
         }
         updateUI();
+    }
+
+    // ฟังก์ชันเพิ่มออเดอร์เขียนมือลงตะกร้าเบิกของ
+    function addManualOrder() {
+        let orderNo = document.getElementById('manualOrderNo').value.trim();
+        let price = Number(document.getElementById('manualOrderPrice').value);
+        let mechanic = document.getElementById('manualOrderMechanic').value;
+
+        if(!orderNo || price <= 0 || !mechanic) {
+            playErrorSound();
+            return Swal.fire({icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณากรอกเลข Order, ราคา (ต้องมากกว่า 0) และเลือกช่างครับ', background: '#141414', color: '#fff'});
+        }
+
+        // อัปเดตช่างใน Sidebar ให้อัตโนมัติ
+        document.getElementById('userSelect').value = mechanic;
+
+        let itemName = `Order: ${orderNo}`;
+        
+        // จำลองสินค้าใหม่ใส่เข้าไปใน itemsData ถ้ายังไม่มี
+        let existingItem = itemsData.find(i => i.name === itemName);
+        if(!existingItem) {
+            itemsData.push({
+                name: itemName,
+                price: price,
+                stock: "unlimited", // ออเดอร์เขียนมือไม่จำกัดสต็อก
+                category: "ManualOrder",
+                image: ""
+            });
+        } else {
+            existingItem.price = price; 
+        }
+
+        addItem(itemName);
+        playSuccessSound();
+        
+        document.getElementById('manualOrderNo').value = '';
+        document.getElementById('manualOrderPrice').value = '';
+        
+        Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'เพิ่มบิลลงตะกร้าแล้ว!', background: '#141414', color: '#fff', timer: 1500, showConfirmButton: false});
     }
 
     function renderHistory() {
@@ -654,7 +726,6 @@
         let noteInput = document.getElementById('teamNoteInput').value;
         let amt = Number(amtInput);
 
-        
         let currentBal = window.exactTeamBalance || 0;
 
         if (amt <= 0) {
@@ -709,7 +780,7 @@
         } else {
             brandTitle.innerText = "TCN Garage"; brandTitle.style.color = "var(--gold-main)"; brandSub.innerText = "ระบบเบิกจ่ายอุปกรณ์ 📊 (คลิกดูยอดอู่)"; userLabel.innerText = "เลือกพนักงานผู้เบิก:"; totalLabel.innerText = "ยอดรวมการเบิก ($)"; totalBoxWrapper.style.borderColor = "var(--gold-main)"; submitBtn.innerText = "ยืนยันการทำรายการ"; submitBtn.style.background = "var(--gold-main)"; btnRestock.style.background = 'transparent'; btnRestock.style.color = 'var(--warning)'; btnRestock.innerText = '📦 เติมสต็อก'; noteLabel.innerText = "หมายเหตุ (ถ้ามี):";
         }
-        if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') renderItems(currentCategory, currentSearchQuery);
+        if (currentCategory === 'Core Parts' || currentCategory === 'Service') renderItems(currentCategory, currentSearchQuery);
     }
 
     function clearCart() { cart = {}; total = 0; document.getElementById('noteInput').value = ''; updateUI(); }
@@ -718,9 +789,24 @@
         currentCategory = cat; document.querySelectorAll('#tab-container .tab-btn').forEach(t => t.classList.remove('active')); 
         if(el.parentElement.id === 'tab-container') el.classList.add('active'); 
         playTabSound(); 
+        
         if (cat === 'History') { isAdminMode = false; clearCart(); updateSidebarUI(); } else { updateSidebarUI(); }
-        document.getElementById('item-grid-container').style.display = 'none'; document.getElementById('history-container').style.display = 'none'; document.getElementById('searchBox').style.visibility = 'hidden';
-        if (cat === 'History') { document.getElementById('history-container').style.display = 'block'; renderHistory(); } else { document.getElementById('item-grid-container').style.display = 'grid'; document.getElementById('searchBox').style.visibility = 'visible'; renderItems(currentCategory, currentSearchQuery); }
+        
+        document.getElementById('item-grid-container').style.display = 'none'; 
+        document.getElementById('history-container').style.display = 'none'; 
+        document.getElementById('manual-order-container').style.display = 'none';
+        document.getElementById('searchBox').style.visibility = 'hidden';
+        
+        if (cat === 'History') { 
+            document.getElementById('history-container').style.display = 'block'; 
+            renderHistory(); 
+        } else if (cat === 'ManualOrder') {
+            document.getElementById('manual-order-container').style.display = 'block'; 
+        } else { 
+            document.getElementById('item-grid-container').style.display = 'grid'; 
+            document.getElementById('searchBox').style.visibility = 'visible'; 
+            renderItems(currentCategory, currentSearchQuery); 
+        }
     }
     
     function renderSidebarCart() {
@@ -729,7 +815,7 @@
         keys.forEach(name => { let item = itemsData.find(i => i.name === name); list.innerHTML += `<div class="sidebar-cart-item"><div class="sidebar-cart-item-info"><h5>${name}</h5><span>$${(item.price * cart[name]).toLocaleString()}</span></div><div class="sidebar-qty-control"><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', -1)">-</button><span class="qty-num">${cart[name]}</span><button class="sidebar-qty-btn" onclick="updateCartQty('${name}', 1)">+</button></div></div>`; });
     }
 
-    function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory === 'Customs' || currentCategory === 'Core Parts' || currentCategory === 'Service') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
+    function updateUI() { document.getElementById('totalPrice').innerText = total.toLocaleString(); if (currentCategory === 'Core Parts' || currentCategory === 'Service') { renderItems(currentCategory, currentSearchQuery); } renderSidebarCart(); }
 
     function generateInvoiceHTML(user, customer, note, actionType) {
         let titleName = "TCN GARAGE"; let titleDesc = "LOS SANTOS, SAN ANDREAS"; let userTitle = "ช่างผู้ทำรายการ"; let amountLabel = "ยอดรวมสุทธิ"; let bottomDesc = "*** แคปรูปบิลนี้เพื่อใช้อ้างอิง ***";
@@ -787,7 +873,8 @@
                         if (currentAction === "withdraw") item.stock -= cart[name];
                     }
                 }
-                clearCart(); isAdminMode = false; updateSidebarUI(); renderItems(currentCategory, currentSearchQuery);
+                clearCart(); isAdminMode = false; updateSidebarUI(); 
+                if (currentCategory === 'Core Parts' || currentCategory === 'Service') renderItems(currentCategory, currentSearchQuery);
                 document.getElementById('customerInput').value = '';
                 Swal.fire({ html: invoiceHtmlStr, width: 500, background: '#e6e6e6', confirmButtonText: 'ปิดระบบ', confirmButtonColor: '#000', allowOutsideClick: false }).then(() => { fetchStock(); }); 
             } else throw new Error(result.message);
