@@ -204,8 +204,8 @@
                         <option value="Royn_Enrico">4. Royn Enrico</option>
                         <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
                         <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
-                        <option value="Daryl_Fender">7. Daryl Fender</option>
-                        <option value="Henry_Tomasino">8. Henry Tomasino</option>
+                        <option value="Henry_Tomasino">7. Henry Tomasino</option>
+                        <option value="Zen_Waller">8. Zen Waller</option>
                     </select>
                 </div>
                 <button class="btn-submit" onclick="saveOrderLogOnly()" style="background: var(--cyan); color: #000; margin-top: 10px;">💾 บันทึกประวัติออเดอร์</button>
@@ -246,8 +246,8 @@
             <option value="Royn_Enrico">4. Royn Enrico</option>
             <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
             <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
-            <option value="Daryl_Fender">7. Daryl Fender</option>
-            <option value="Henry_Tomasino">8. Henry Tomasino</option>
+            <option value="Henry_Tomasino">7. Henry Tomasino</option>
+            <option value="Zen_Waller">8. Zen Waller</option>
         </select>
 
         <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
@@ -378,11 +378,6 @@
             garageShare = totalAmount;
             mechPct = "0%";
             garagePct = "100%";
-        } else if (displayUser === "Daryl Fender") {
-            mechShare = totalAmount * 0.10;
-            garageShare = totalAmount * 0.90;
-            mechPct = "10%";
-            garagePct = "90%";
         }
 
         let block = String.fromCharCode(96, 96, 96);
@@ -965,11 +960,6 @@
                     garageCut = mechIncome;
                     pctMech = "0%";
                     pctGarage = "100%";
-                } else if (name === "Daryl Fender") {
-                    mechCut = mechIncome * 0.10;
-                    garageCut = mechIncome * 0.90;
-                    pctMech = "10%";
-                    pctGarage = "90%";
                 }
                 
                 totalCentralFund += garageCut;
