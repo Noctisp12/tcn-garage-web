@@ -322,10 +322,10 @@
 
         <div style="margin-top: 15px; text-align: left;">
             <label style="display: block; margin-bottom: 5px; font-size: 13px; color: var(--text-light);">จำนวนเงิน ($):</label>
-            <input type="number" id="teamAmountInput" placeholder="ระบุจำนวนเงิน..." style="width: 100%; padding: 10px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 10px; font-size: 14px;">
+            <input type="number" id="teamAmountInput" placeholder="ระบุจำนวนเงิน..." style="width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 10px; font-size: 14px;">
 
             <label style="display: block; margin-bottom: 5px; font-size: 13px; color: var(--text-light);">หมายเหตุ (Note):</label>
-            <textarea id="teamNoteInput" rows="2" placeholder="ระบุรายละเอียด (เช่น ค่าข้าว, เลี้ยงน้ำ)..." style="width: 100%; padding: 10px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 15px; font-size: 14px;"></textarea>
+            <textarea id="teamNoteInput" rows="2" placeholder="ระบุรายละเอียด (เช่น ค่าข้าว, เลี้ยงน้ำ)..." style="width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px; outline: none; margin-bottom: 15px; font-size: 14px;"></textarea>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -380,6 +380,11 @@
             garageShare = totalAmount;
             mechPct = "0%";
             garagePct = "100%";
+        } else if (displayUser === "Daryl Fender") {
+            mechShare = totalAmount * 0.10;
+            garageShare = totalAmount * 0.90;
+            mechPct = "10%";
+            garagePct = "90%";
         }
 
         let block = String.fromCharCode(96, 96, 96);
@@ -474,9 +479,12 @@
         select.innerHTML = '';
         let uniqueDates = [];
         logsData.forEach(log => {
-            let d = parseDateString(log.time);
-            let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            // สำคัญ: กรองเอาเฉพาะข้อมูลอู่ (ไม่เอาประวัติเงินกองกลางทีมมาโชว์ในกราฟอู่) เพื่อป้องกันวันว่างๆ โผล่มา
+            if (log.mechanic !== "TEAM" && log.mechanic !== "TEST_SYSTEM" && log.mechanic !== "TEST SYSTEM") {
+                let d = parseDateString(log.time);
+                let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
