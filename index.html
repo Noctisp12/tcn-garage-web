@@ -177,9 +177,9 @@
         
         <div class="item-grid" id="item-grid-container"></div>
 
-        <!-- หน้าสำหรับคีย์ออเดอร์ (บันทึกแยก ไม่ปนกับประวัติอู่) -->
+        <!-- หน้าสำหรับคีย์ออเดอร์ -->
         <div class="history-container" id="manual-order-container" style="display: none; max-width: 600px;">
-            <h2 style="color: var(--cyan); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🧾 บันทึกประวัติออเดอร์ (แยกจากระบบเบิกของ)</h2>
+            <h2 style="color: var(--cyan); margin-bottom: 20px; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🧾 บันทึกประวัติออเดอร์</h2>
             
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <div>
@@ -209,7 +209,7 @@
                         <option value="Dimitri_Pasternak">9. Dimitri Pasternak</option>
                     </select>
                 </div>
-                <button class="btn-submit" onclick="saveOrderLogOnly()" style="background: var(--cyan); color: #000; margin-top: 10px;">💾 บันทึกประวัติออเดอร์</button>
+                <button class="btn-submit" onclick="saveOrderLogOnly()" style="background: var(--cyan); color: #000; margin-top: 10px;">💾 บันทึกประวัติออเดอร์เข้าอู่</button>
             </div>
         </div>
 
@@ -389,9 +389,10 @@
         if (payload.name === "TEST_SYSTEM" || payload.name === "TEST SYSTEM") {
             title = "🧪 [SYSTEM] ทดสอบระบบ"; 
             color = 16711935;
-        } else if (payload.action === "save_order_log") {
-            title = "🧾 [ORDER] บันทึกออเดอร์ใหม่"; color = 13816530;
-            detailValue = block + "text\nรายการ: " + payload.order + "\n" + block;
+        } else if (payload.action === "manual_order") {
+            title = "🧾 [ORDER] บันทึกออเดอร์ใหม่"; 
+            color = 13816530;
+            detailValue = block + "text\nรายการ: " + payload.order + "\n----------------\nช่าง ("+mechPct+"): $" + mechShare.toLocaleString('en-US') + "\nเข้าอู่ ("+garagePct+"): $" + garageShare.toLocaleString('en-US') + "\n" + block;
         } else if (payload.action === "restock") {
             title = "📥 [RESTOCK] เติมสินค้าเข้าคลัง"; color = 3788564;
         } else if (payload.action === "add_budget") {
@@ -409,7 +410,7 @@
             { name: "👤 ผู้ทำรายการ", value: displayUser, inline: true }
         ];
 
-        if (payload.action === "withdraw" || payload.action === "save_order_log") {
+        if (payload.action === "withdraw" || payload.action === "manual_order") {
             fields.push({ name: "🧑‍🔧 ลูกค้า", value: customerName, inline: true });
         }
 
@@ -565,14 +566,13 @@
         updateUI();
     }
 
-    // --- ฟังก์ชันบันทึกออเดอร์ (แยกเฉพาะ) ---
+    // --- ฟังก์ชันบันทึกออเดอร์ (รวมเข้า Log หลัก) ---
     async function saveOrderLogOnly() {
         let orderNo = document.getElementById('manualOrderNo').value.trim();
         let customer = document.getElementById('manualOrderCustomer').value.trim();
         let price = Number(document.getElementById('manualOrderPrice').value);
         let mechanic = document.getElementById('manualOrderMechanic').value;
 
-        // แยกการแจ้งเตือนทีละช่องให้ชัดเจนว่าบังคับช่องไหนบ้าง
         if (!orderNo) {
             playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุ เลข Order / ชื่อรายการ ด้วยครับ', background: '#141414', color: '#fff'});
         }
@@ -586,14 +586,15 @@
             playErrorSound(); return Swal.fire({icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือก ชื่อช่าง ด้วยครับ', background: '#141414', color: '#fff'});
         }
 
+        // ส่ง action เป็น manual_order เพื่อรวมลงแผ่นงาน Log ปกติ
         let payload = { 
             name: mechanic, 
             customer: customer, 
-            order: orderNo, 
+            order: "🏷️ รายการออเดอร์: " + orderNo, 
             note: "-", 
             total: price, 
             cart: {}, 
-            action: "save_order_log" 
+            action: "manual_order" 
         };
 
         Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -603,12 +604,13 @@
             const result = await res.json();
             if (result.status === "success") { 
                 playSuccessSound(); 
+                sendDiscordWebhookToChannel(payload);
                 document.getElementById('manualOrderNo').value = '';
                 document.getElementById('manualOrderCustomer').value = '';
                 document.getElementById('manualOrderPrice').value = '';
                 document.getElementById('manualOrderMechanic').value = '';
                 
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: 'ข้อมูลออเดอร์ถูกส่งไปที่ระบบหลังบ้านแล้วครับ', background: '#141414', color: '#fff' }); 
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: 'ข้อมูลออเดอร์ถูกส่งไปที่ระบบหลังบ้านแล้วครับ', background: '#141414', color: '#fff' }).then(() => { fetchStock(); }); 
             } else {
                 throw new Error(result.message);
             }
@@ -636,6 +638,8 @@
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
             } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
                 statusBadge = `<span class="badge-restock" style="border-color:var(--success); color:var(--success); background:rgba(57, 255, 20, 0.1);">💰 เพิ่มงบอู่</span>`; totalColor = `color: var(--success);`; 
+            } else if (log.type === "🧾 ออเดอร์") {
+                statusBadge = `<span class="badge-restock" style="border-color:var(--cyan); color:var(--cyan); background:rgba(0, 206, 209, 0.1);">🧾 ออเดอร์</span>`; totalColor = `color: var(--cyan);`; 
             }
 
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
@@ -962,6 +966,11 @@
                     garageCut = mechIncome;
                     pctMech = "0%";
                     pctGarage = "100%";
+                } else if (name === "Daryl Fender") {
+                    mechCut = mechIncome * 0.10;
+                    garageCut = mechIncome * 0.90;
+                    pctMech = "10%";
+                    pctGarage = "90%";
                 }
                 
                 totalCentralFund += garageCut;
