@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCN Garage - Official Tablet</title>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -26,7 +26,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
+        
         body { 
             background-color: var(--bg-body); 
             background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
@@ -55,18 +55,18 @@
 
         .layout-wrapper { display: flex; gap: 20px; max-width: 1300px; width: 100%; align-items: flex-start; z-index: 1; }
         .main-content { flex: 3; display: flex; flex-direction: column; gap: 20px; }
-
+        
         .sidebar { flex: 1; background-color: var(--bg-panel); border: 1px solid var(--gold-main); border-radius: 12px; padding: 25px; box-shadow: 0 0 20px var(--gold-glow); min-width: 330px; display: flex; flex-direction: column; height: fit-content; backdrop-filter: blur(5px); position: sticky; top: 40px; }
-
+        
         .header-controls { background-color: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 20px; backdrop-filter: blur(5px); }
         .tabs { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
         .tab-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 14px; }
         .tab-btn.active, .tab-btn:hover { background-color: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
-
+        
         .search-box { max-width: 250px; }
         .search-box input { width: 100%; padding: 12px 15px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; transition: 0.3s; }
         .search-box input:focus { border-color: var(--gold-main); }
-
+        
         .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding-right: 5px;}
         .item-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out forwards; backdrop-filter: blur(5px); }
         .item-card:hover { border-color: var(--gold-main); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); }
@@ -78,13 +78,13 @@
         .price { color: var(--gold-main); font-weight: bold; font-size: 15px; }
         .stock { color: var(--text-muted); font-size: 13px; font-weight: 600; }
         .stock-low { color: var(--warning); animation: pulseAlert 1.5s infinite; }
-
+        
         .btn-add, .btn-out { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .btn-add { background: linear-gradient(145deg, #2a2a2a, #141414); color: var(--gold-main); border: 1px solid var(--border-color); box-shadow: 3px 3px 6px rgba(0,0,0,0.8), -3px -3px 6px rgba(40,40,40,0.2);}
         .btn-add:hover { background: var(--gold-main); color: #000; border-color: var(--gold-main); box-shadow: 0 0 10px var(--gold-glow); }
         .btn-add:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
         .btn-out { background-color: #b30000; color: #fff; opacity: 0.5; cursor: not-allowed; }
-
+        
         .brand { text-align: center; margin-bottom: 20px; flex-shrink: 0; cursor: pointer; border-radius: 8px; transition: 0.3s; padding: 10px; }
         .brand:hover { background: rgba(212, 175, 55, 0.1); border: 1px dashed var(--gold-main); }
         .brand h1 { color: var(--gold-main); font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--gold-glow); transition: 0.3s;}
@@ -94,16 +94,16 @@
         .sidebar label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-light); flex-shrink: 0; }
         .sidebar select, .sidebar textarea, .sidebar input[type="text"] { width: 100%; padding: 10px; background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 8px; outline: none; margin-bottom: 15px; transition: 0.3s; flex-shrink: 0; font-size: 14px; }
         .sidebar select:focus, .sidebar textarea:focus, .sidebar input[type="text"]:focus { border-color: var(--gold-main); }
-
+        
         .sidebar-cart-list { background-color: rgba(31, 31, 31, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; height: auto; min-height: 80px; transition: 0.3s; }
         .sidebar-cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #2a2a2a; }
         .sidebar-cart-item:last-child { border-bottom: none; }
         .sidebar-cart-item-info h5 { font-size: 13px; margin-bottom: 2px; color: #fff; }
         .sidebar-cart-item-info span { color: var(--gold-main); font-size: 12px; font-weight: bold; }
-
+        
         .sidebar-qty-control { display: flex; align-items: center; gap: 8px; }
         .sidebar-qty-btn { background: #222; border: 1px solid var(--border-color); color: #fff; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; }
-
+        
         .total-box { background-color: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; border: 1px dashed var(--gold-main); text-align: center; margin-bottom: 15px; flex-shrink: 0; transition: 0.3s; }
         .total-box span.label { display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
         .total-box span.amount { color: var(--gold-main); font-size: 24px; font-weight: bold; }
@@ -127,7 +127,7 @@
         .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; width: 850px; max-width: 95%; position: relative; box-shadow: 0 0 40px #000; animation: scaleUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
         .close-app { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #fff; cursor: pointer; background: none; border: none; transition: 0.2s; }
         .close-app:hover { color: var(--danger); }
-
+        
         .filter-container { text-align: center; margin-bottom: 20px; }
         .filter-select { background: #222; color: var(--gold-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 5px; font-size: 14px; outline: none; cursor: pointer; font-weight: bold; }
         .filter-select:focus { border-color: var(--gold-main); }
@@ -169,12 +169,12 @@
             </div>
 
             <button class="tab-btn" onclick="openTeamModal()" style="border: 1px dashed var(--cyan); color: var(--cyan); background: rgba(0, 206, 209, 0.05); font-weight: bold; margin-left: auto;">💎 จัดการกองกลางทีม</button>
-
+            
             <div class="search-box" id="searchBox" style="margin-left: 10px;">
                 <input type="text" placeholder="ค้นหาชิ้นส่วน..." onkeyup="searchItems(this.value)">
             </div>
         </div>
-
+        
         <div class="item-grid" id="item-grid-container"></div>
 
         <div class="history-container" id="history-container">
@@ -211,8 +211,9 @@
             <option value="Royn_Enrico">4. Royn Enrico</option>
             <option value="Scarlatt_Chaos_Rihanna">5. Scarlatt Chaos Rihanna</option>
             <option value="Buckley_Red_Rihanna">6. Buckley Red Rihanna</option>
-            <option value="Daryl_Fender">7. Daryl Fender</option>
-            <option value="Henry_Tomasino">8. Henry Tomasino</option>
+            <option value="Henry_Tomasino">7. Henry Tomasino</option>
+            <option value="Zen_Waller">8. Zen Waller</option>
+            <option value="Dimitri_Pasternak">9. Dimitri Pasternak</option>
         </select>
 
         <label for="customerInput" id="customerLabel">👤 ชื่อลูกค้า (ต้องระบุ):</label>
@@ -241,7 +242,7 @@
     <div class="modal-content">
         <button class="close-app" onclick="toggleApp('dashboardModal')">✕</button>
         <h2 id="chartMainTitle" style="color: var(--gold-main); margin-bottom: 15px; text-align: center;">📊 สรุปยอดบัญชีอู่รายวัน</h2>
-
+        
         <div class="filter-container">
             <select id="timeFilter" class="filter-select" onchange="renderChart()"></select>
         </div>
@@ -277,7 +278,7 @@
         <button class="close-app" onclick="toggleApp('teamModal')">✕</button>
         <h2 style="color: var(--cyan); text-align: center; margin-bottom: 5px;">💎 บัญชีกองกลางทีม</h2>
         <p style="text-align: center; color: #888; font-size: 13px; margin-bottom: 15px;">ระบบนี้ไม่ถูกนำไปรวมกับบัญชีหลักของอู่</p>
-
+        
         <div class="total-box" style="border-color: var(--cyan); background: rgba(0, 206, 209, 0.05); padding: 20px;">
             <span class="label" style="color: var(--cyan); font-size: 14px; margin-bottom: 5px;">ยอดเงินคงเหลือทีมสุทธิ</span>
             <span class="amount" style="color: #fff; font-size: 32px;">$<span id="teamBalanceAmount">0</span></span>
@@ -327,11 +328,11 @@
     function sendDiscordWebhookToChannel(payload) {
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1511627088522776699/1Kx_lvhi_aJe-r5PiNuNsVcAn8bvSyzwzB34iPEMQkf4EZ_JL3iRqCyZGVMAdLK6pOxN";
         if (!WEBHOOK_URL) return;
-
+        
         let title = "🧾 [WITHDRAW] TCN GARAGE";
         let color = 15965196; 
         let totalAmount = Number(payload.total) || 0;
-
+        
         let displayUser = payload.name.replace(/_/g, ' ');
         let mechShare = totalAmount * 0.20;
         let garageShare = totalAmount * 0.80;
@@ -343,11 +344,6 @@
             garageShare = totalAmount;
             mechPct = "0%";
             garagePct = "100%";
-        } else if (displayUser === "Daryl Fender") {
-            mechShare = totalAmount * 0.10;
-            garageShare = totalAmount * 0.90;
-            mechPct = "10%";
-            garagePct = "90%";
         }
 
         let block = String.fromCharCode(96, 96, 96);
@@ -438,9 +434,12 @@
         select.innerHTML = '';
         let uniqueDates = [];
         logsData.forEach(log => {
-            let d = parseDateString(log.time);
-            let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-            if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            // กรองไม่เอาประวัติ TEAM และ TEST_SYSTEM มาสร้างวันที่ เพื่อไม่ให้โผล่วันที่ว่างเปล่า
+            if (log.mechanic !== "TEAM" && log.mechanic !== "TEST_SYSTEM" && log.mechanic !== "TEST SYSTEM") {
+                let d = parseDateString(log.time);
+                let dStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                if (!uniqueDates.includes(dStr)) { uniqueDates.push(dStr); }
+            }
         });
 
         if(uniqueDates.length === 0) { select.innerHTML = '<option value="">ไม่มีข้อมูล</option>'; return; }
@@ -450,7 +449,6 @@
     }
 
     function updateTeamFundBalance() {
-
         document.getElementById('teamBalanceAmount').innerText = (window.exactTeamBalance || 0).toLocaleString();
 
         const teamTbody = document.getElementById('team-history-body');
@@ -495,9 +493,9 @@
         filteredItems.forEach(item => {
             let currentDisplayStock = getDisplayStock(item.name);
             let stockLabelHTML = currentDisplayStock === "unlimited" ? `<span class="stock">∞ ไม่จำกัด</span>` : currentDisplayStock > 5 ? `<span class="stock">เหลือ ${currentDisplayStock}</span>` : currentDisplayStock > 0 ? `<span class="stock stock-low">⚠️ ใกล้หมด (${currentDisplayStock})</span>` : `<span class="stock" style="color: var(--danger);">หมด!</span>`;
-
+            
             let btnHTML = (currentDisplayStock > 0 || currentDisplayStock === "unlimited" || isAdminMode) ? `<button class="btn-add" onclick="addItem('${item.name}')">+ เพิ่มลงรายการ${cart[item.name] ? ` (${cart[item.name]})`:''}</button>` : `<button class="btn-out" onclick="playErrorSound()">สินค้าหมด</button>`;
-
+            
             const fallback = `<span>NO IMG<br>${item.name.substring(0, 3).toUpperCase()}</span>`;
             const imgHTML = `<img src="images/${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='${fallback}'">`;
             container.innerHTML += `<div class="item-card"><div class="item-image">${imgHTML}</div><div class="item-info"><h4>${item.name}</h4><div class="price-stock"><span class="price">$${item.price.toLocaleString()}</span>${stockLabelHTML}</div>${btnHTML}</div></div>`;
@@ -515,7 +513,7 @@
             } else { playErrorSound(); }
         } 
     }
-
+    
     function updateCartQty(name, change) {
         let item = itemsData.find(i => i.name === name); if (!item) return;
         let currentCartQty = cart[name] || 0;
@@ -536,15 +534,15 @@
         let garageLogs = logsData.filter(log => log.mechanic !== "TEAM");
 
         if (garageLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #888;">ไม่มีประวัติการทำรายการอู่</td></tr>`; return; }
-
+        
         let displayLogs = garageLogs.slice(0, 30);
         displayLogs.forEach(log => {
             const dateObj = new Date(log.time); 
             const dateStr = isNaN(dateObj) ? log.time : dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-
+            
             let statusBadge = `<span class="badge-withdraw">🔴 เบิกออก</span>`; 
             let totalColor = `color: var(--gold-main);`; 
-
+            
             if (log.type === "🟢 เติมเข้า" || log.order.includes("[เติมเข้า]")) {
                 statusBadge = `<span class="badge-restock">🟢 เติมเข้า</span>`; totalColor = `color: var(--danger);`; 
             } else if (log.type === "💰 เพิ่มงบ" || log.order.includes("[เพิ่มงบ]") || log.order.includes("[ทดสอบระบบ]")) {
@@ -552,7 +550,7 @@
             }
 
             let customerName = log.customer && log.customer !== "" ? log.customer : "-";
-
+            
             let cleanOrder = log.order.replace(/📦 \[เติมเข้า\] |💰 \[เพิ่มงบกองกลาง\] |🧪 \[ทดสอบระบบ\] /g, "");
             let noteHtml = log.note ? `<br><small style="color:var(--warning);">หมายเหตุ: ${log.note}</small>` : '';
             let displayTotal = Number(log.total) || 0;
@@ -654,7 +652,6 @@
         let amtInput = document.getElementById('teamAmountInput').value;
         let noteInput = document.getElementById('teamNoteInput').value;
         let amt = Number(amtInput);
-
 
         let currentBal = window.exactTeamBalance || 0;
 
@@ -860,11 +857,6 @@
                     garageCut = mechIncome;
                     pctMech = "0%";
                     pctGarage = "100%";
-                } else if (name === "Daryl Fender") {
-                    mechCut = mechIncome * 0.10;
-                    garageCut = mechIncome * 0.90;
-                    pctMech = "10%";
-                    pctGarage = "90%";
                 }
 
                 totalCentralFund += garageCut;
