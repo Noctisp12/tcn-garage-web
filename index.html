@@ -407,7 +407,7 @@
 
     window.onload = function() { fetchStock(); };
 
-    // ฟังก์ชันโหลดข้อมูลแบบซ่อนหน้าจอโหลด (Silent)
+    // ฟังก์ชันโหลดข้อมูลแบบซ่อนหน้าจอโหลด (Silent) เอาคำสั่งโหลด Auto ออกแล้ว
     async function fetchStock(isSilent = false) {
         if (!isSilent) {
             Swal.fire({ title: 'TCN OS', text: 'กำลังเชื่อมต่อฐานข้อมูล...', allowOutsideClick: false, background: '#141414', color: '#fff', didOpen: () => Swal.showLoading() });
@@ -431,11 +431,6 @@
         }
     }
 
-    // แอบดึงข้อมูลใหม่ทุกๆ 15 วินาที
-    setInterval(() => {
-        fetchStock(true); 
-    }, 15000); 
-
     function populateTimeFilter() {
         const select = document.getElementById('timeFilter');
         select.innerHTML = '';
@@ -456,7 +451,6 @@
     }
 
     function updateTeamFundBalance() {
-
         document.getElementById('teamBalanceAmount').innerText = (window.exactTeamBalance || 0).toLocaleString();
 
         const teamTbody = document.getElementById('team-history-body');
